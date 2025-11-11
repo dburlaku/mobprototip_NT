@@ -397,7 +397,7 @@ function addNadiMessage(text, hint = null) {
     messageDiv.className = 'message nadi';
 
     messageDiv.innerHTML = `
-        <div class="message-avatar">🤖</div>
+        <div class="message-avatar">👩</div>
         <div>
             <div class="message-bubble">
                 ${text}
@@ -443,7 +443,7 @@ function showTypingIndicator() {
     typingDiv.id = 'typingIndicator';
 
     typingDiv.innerHTML = `
-        <div class="message-avatar">🤖</div>
+        <div class="message-avatar">👩</div>
         <div>
             <div class="message-bubble">
                 <div class="typing-indicator">
