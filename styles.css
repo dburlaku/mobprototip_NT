@@ -714,6 +714,7 @@ h3 {
     background: var(--background-white);
     box-shadow: var(--shadow);
     flex-shrink: 0;
+    min-height: 72px; /* Единая высота хедера */
 }
 
 .history-button {
@@ -1363,6 +1364,7 @@ h3 {
     position: sticky;
     top: 0;
     z-index: 100;
+    min-height: 72px; /* Единая высота хедера */
 }
 
 .menu-icon,
@@ -1621,6 +1623,7 @@ h3 {
     top: 0;
     z-index: 100;
     gap: calc(var(--base-unit) * 2);
+    min-height: 72px; /* Единая высота хедера */
 }
 
 .header-title {
@@ -2381,13 +2384,13 @@ h3 {
     display: flex;
     align-items: center;
     gap: calc(var(--base-unit) * 2);
-    padding: calc(var(--base-unit) * 3);
+    padding: calc(var(--base-unit) * 2);
     background: var(--background-dark); /* Тёмный header */
     box-shadow: 0 2px 8px rgba(0,0,0,0.5);
     position: sticky;
     top: 0;
     z-index: 100;
-    min-height: 80px;
+    min-height: 72px; /* Единая высота хедера */
     border-bottom: 1px solid rgba(36, 242, 191, 0.2);
 }
 
