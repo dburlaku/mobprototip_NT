@@ -1,0 +1,777 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=yes">
+    <title>Nadi — Сохраните ваши воспоминания</title>
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='0.9em' font-size='90'>🌿</text></svg>">
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+
+    <!-- Burger Menu -->
+    <div id="sideMenu" class="side-menu">
+        <div class="menu-header">
+            <div class="menu-logo" onclick="goToSplash()" style="cursor: pointer;">🌿 Nadi</div>
+            <button class="menu-close" onclick="toggleMenu()">✕</button>
+        </div>
+        <nav class="menu-nav">
+            <button class="menu-item" onclick="newChat()">
+                <span class="menu-icon">💬</span>
+                <span class="menu-text">Новый чат</span>
+            </button>
+            <button class="menu-item" onclick="showChatList()">
+                <span class="menu-icon">💭</span>
+                <span class="menu-text">Все чаты</span>
+            </button>
+            <div class="menu-divider"></div>
+            <button class="menu-item" onclick="showMediaFiles()">
+                <span class="menu-icon">📸</span>
+                <span class="menu-text">Медиафайлы</span>
+            </button>
+            <button class="menu-item" onclick="showArtifacts()">
+                <span class="menu-icon">🎨</span>
+                <span class="menu-text">Артефакты</span>
+            </button>
+            <button class="menu-item" onclick="showNadiStats()">
+                <span class="menu-icon">📊</span>
+                <span class="menu-text">Статистика</span>
+            </button>
+            <div class="menu-divider"></div>
+            <button class="menu-item" onclick="showAccount()">
+                <span class="menu-icon">👤</span>
+                <span class="menu-text">Профиль</span>
+            </button>
+        </nav>
+    </div>
+    <div id="menuOverlay" class="menu-overlay" onclick="toggleMenu()"></div>
+
+    <!-- Splash Screen -->
+    <div id="splash" class="screen active">
+        <div class="splash-content">
+            <div class="logo">🌿 Nadi</div>
+
+            <div class="research-section">
+                <h3 class="research-title">Основано на исследованиях:</h3>
+                <blockquote class="research-quote">
+                    "Терапия воспоминаниями снижает депрессию на 61%"
+                </blockquote>
+                <div class="research-source">
+                    <span class="source-icon">🎓</span>
+                    <span>Поддержка учёных и психологов</span>
+                </div>
+            </div>
+
+            <button type="button" class="primary-button splash-start-btn">
+                Начать →
+            </button>
+        </div>
+    </div>
+
+    <!-- Scenario Selection Screen (для тестирования) -->
+    <div id="scenarioSelect" class="screen">
+        <div class="container">
+            <h1>Выберите сценарий тестирования</h1>
+            <p class="intro-text">Для демонстрации разным аудиториям</p>
+
+            <div class="choice-cards">
+                <button class="choice-card" onclick="selectScenario('new')">
+                    <div class="card-icon">🆕</div>
+                    <div class="card-title">Новый пользователь</div>
+                    <div class="card-description">Первый визит, знакомство с Nadi</div>
+                </button>
+
+                <button class="choice-card" onclick="selectScenario('returning')">
+                    <div class="card-icon">🔄</div>
+                    <div class="card-title">Возвращающийся</div>
+                    <div class="card-description">Пользователь со Сказателя с сохраненными воспоминаниями</div>
+                </button>
+
+                <button class="choice-card" onclick="selectScenario('advanced')">
+                    <div class="card-icon">⭐</div>
+                    <div class="card-title">Продвинутый</div>
+                    <div class="card-description">5+ воспоминаний, полная статистика</div>
+                </button>
+            </div>
+
+            <button class="text-button" onclick="showAbout()">О проекте</button>
+        </div>
+    </div>
+
+    <!-- Registration Screen (для нового пользователя) -->
+    <div id="registration" class="screen">
+        <div class="container">
+            <h1>👋 Добро пожаловать в Nadi!</h1>
+            <p class="intro-text">Для начала работы представьтесь, пожалуйста</p>
+
+            <div class="form-group">
+                <input type="text" id="userName" class="form-input" placeholder="Ваше имя" maxlength="50">
+            </div>
+
+            <button class="primary-button full-width" onclick="completeRegistration()">Продолжить</button>
+
+            <p class="hint-text">Имя нужно, чтобы я мог обращаться к вам лично</p>
+        </div>
+    </div>
+
+    <!-- Welcome Screen -->
+    <div id="welcome" class="screen">
+        <div class="top-bar">
+            <button class="burger-button" onclick="toggleMenu()">☰</button>
+            <div class="top-logo" onclick="goToSplash()" style="cursor: pointer;">Nadi</div>
+            <button class="info-button" onclick="showInfo()">ℹ️</button>
+        </div>
+
+        <div class="container">
+            <h1 id="welcomeTitle">👋 Добро пожаловать!</h1>
+            <p class="intro-text" id="welcomeText">Я — Nadi, ваш персональный помощник в сохранении воспоминаний</p>
+
+            <!-- Секция для продвинутого пользователя с темами -->
+            <div id="advancedUserTopics" style="display: none;">
+                <h2 style="margin-top: 0;">Продолжить разговор</h2>
+                <div class="user-topics-list">
+                    <button class="theme-card" onclick="selectTheme('childhood')">
+                        <div class="theme-icon">☀️</div>
+                        <div class="theme-content">
+                            <div class="theme-title">Детство под солнцем</div>
+                            <div class="theme-subtitle">Продолжить • 12 сообщений</div>
+                        </div>
+                    </button>
+                    <button class="theme-card" onclick="selectTheme('home')">
+                        <div class="theme-icon">🏠</div>
+                        <div class="theme-content">
+                            <div class="theme-title">Семейный очаг</div>
+                            <div class="theme-subtitle">Продолжить • 8 сообщений</div>
+                        </div>
+                    </button>
+                </div>
+
+                <h2>Новые темы</h2>
+                <div class="user-topics-list">
+                    <button class="theme-card" onclick="selectTheme('family')">
+                        <div class="theme-icon">💪</div>
+                        <div class="theme-content">
+                            <div class="theme-title">Сила рода</div>
+                            <div class="theme-subtitle">Начать новую тему</div>
+                        </div>
+                    </button>
+                    <button class="theme-card" onclick="selectTheme('happiness')">
+                        <div class="theme-icon">💝</div>
+                        <div class="theme-content">
+                            <div class="theme-title">Моменты счастья</div>
+                            <div class="theme-subtitle">Начать новую тему</div>
+                        </div>
+                    </button>
+                </div>
+            </div>
+
+            <div class="main-action" id="mainAction">
+                <button class="primary-button large" onclick="startStory()">
+                    🎙️ Начать разговор
+                </button>
+                <p class="hint-text" id="welcomeHint">Выберу тему и задам правильные вопросы</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Info Modal -->
+    <div id="infoModal" class="modal">
+        <div class="modal-content">
+            <h2>ℹ️ Как это работает?</h2>
+            <div class="modal-body">
+                <p>Я расспрошу вас о памятных событиях или фотографиях</p>
+                <p>Затем создам красивую историю, которую вы сможете:</p>
+                <ul>
+                    <li>✓ Сохранить навсегда</li>
+                    <li>✓ Поделиться с близкими</li>
+                    <li>✓ Дополнить в любое время</li>
+                </ul>
+                <p class="highlight">Первые 3 истории — бесплатно</p>
+            </div>
+            <button class="primary-button" onclick="closeInfo()">Понятно, начнём</button>
+        </div>
+    </div>
+
+    <!-- About Project Screen -->
+    <div id="about" class="screen">
+        <div class="top-bar">
+            <button class="back-button" onclick="goBack()">←</button>
+            <div class="top-logo">О проекте</div>
+            <div class="spacer"></div>
+        </div>
+
+        <div class="container">
+            <div class="about-content">
+                <div class="about-logo">🌿</div>
+                <h1>Nadi</h1>
+                <p class="tagline">Сохраняем истории, которые важны</p>
+
+                <div class="about-section">
+                    <h3>💡 Идея проекта</h3>
+                    <p>Nadi помогает сохранить ваши воспоминания в живой, эмоциональной форме. Через простой диалог я превращаю ваши рассказы в красивые истории.</p>
+                </div>
+
+                <div class="about-section">
+                    <h3>🎯 Для кого?</h3>
+                    <p>Для всех, кто хочет сохранить важные моменты жизни и передать их следующим поколениям. Особенно для тех, кому 55+.</p>
+                </div>
+
+                <div class="about-section">
+                    <h3>🔗 Экосистема</h3>
+                    <p>Nadi — часть платформы Nasledie.Digital</p>
+                    <a href="https://dmitrijburlaku.nasledie.digital/" target="_blank" class="external-link">
+                        Перейти на полную версию →
+                    </a>
+                </div>
+
+                <div class="about-section">
+                    <h3>👨‍💻 Команда</h3>
+                    <p>Проект создан с любовью командой разработчиков и дизайнеров, которые верят в силу историй.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Theme Selection Screen -->
+    <div id="themes" class="screen">
+        <div class="top-bar">
+            <button class="back-button" onclick="goBack()">←</button>
+            <div class="top-logo">Выбор темы</div>
+            <div class="spacer"></div>
+        </div>
+
+        <div class="container">
+            <h2>О чём хотите поговорить?</h2>
+            <p class="subtitle">Выберите тему или предложите свою</p>
+
+            <div class="theme-list">
+                <button class="theme-card" onclick="selectTheme('home')">
+                    <div class="theme-icon">🏠</div>
+                    <div class="theme-content">
+                        <div class="theme-title">Семейный очаг</div>
+                        <div class="theme-subtitle">Дом, где всегда пахнет теплом</div>
+                    </div>
+                </button>
+
+                <button class="theme-card" onclick="selectTheme('childhood')">
+                    <div class="theme-icon">☀️</div>
+                    <div class="theme-content">
+                        <div class="theme-title">Детство под солнцем</div>
+                        <div class="theme-subtitle">Вкус мороженого и летние каникулы</div>
+                    </div>
+                </button>
+
+                <button class="theme-card" onclick="selectTheme('family')">
+                    <div class="theme-icon">💪</div>
+                    <div class="theme-content">
+                        <div class="theme-title">Сила рода</div>
+                        <div class="theme-subtitle">Истоки, что делают нас собой</div>
+                    </div>
+                </button>
+
+                <button class="theme-card" onclick="selectTheme('happiness')">
+                    <div class="theme-icon">💝</div>
+                    <div class="theme-content">
+                        <div class="theme-title">Моменты счастья</div>
+                        <div class="theme-subtitle">Смех, который звучит сквозь годы</div>
+                    </div>
+                </button>
+
+                <button class="theme-card custom" onclick="customTheme()">
+                    <div class="theme-icon">✏️</div>
+                    <div class="theme-content">
+                        <div class="theme-title">Своя тема</div>
+                    </div>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Chat Screen -->
+    <div id="chat" class="screen">
+        <div class="chat-header">
+            <button class="burger-button" onclick="toggleMenu()">☰</button>
+            <div class="header-progress-container">
+                <div class="progress-text">
+                    <span id="progressLabel">Прогресс:</span>
+                    <span id="progressPercentage">0%</span>
+                </div>
+                <div class="progress-bar-header">
+                    <div class="progress-bar-fill" id="progressBarFill"></div>
+                </div>
+            </div>
+            <button class="history-button" id="historyButton" onclick="showResult()" style="display: block; opacity: 0.5;" disabled title="История">
+                →
+            </button>
+        </div>
+
+        <div class="chat-messages" id="chatMessages">
+            <!-- Messages will be added here dynamically -->
+        </div>
+
+        <div class="chat-input-area">
+            <button class="input-action-button" onclick="attachFile()">📎</button>
+            <div class="input-container">
+                <textarea id="userInput" placeholder="введите ответ" rows="1"></textarea>
+            </div>
+            <button class="input-action-button" onclick="toggleVoice()">🎤</button>
+            <button class="send-button" id="sendButton" onclick="sendMessage()">↑</button>
+        </div>
+
+        <!-- Hidden file input -->
+        <input type="file" id="fileInput" accept="image/*,video/*,audio/*" multiple hidden onchange="handleFileUpload(event)">
+    </div>
+
+    <!-- Result Screen (Capsule) -->
+    <div id="result" class="screen">
+        <div class="top-bar">
+            <button class="burger-button" onclick="toggleMenu()">☰</button>
+            <div class="top-logo">Результат</div>
+            <div class="spacer"></div>
+        </div>
+
+        <div class="container">
+            <div class="result-header">
+                <h1>История готова! ✨</h1>
+            </div>
+
+            <div class="story-card" onclick="readFull()" style="cursor: pointer;">
+                <h2 id="storyTitle" class="story-title">📖 Рыбалка с дедом</h2>
+
+                <div class="story-preview" id="storyPreview">
+                    <p>"Каждое лето, с июля до сентября, мы с дедом ходили на рыбалку. Помню, как однажды поймал щуку больше килограмма — дед так гордился..."</p>
+                </div>
+
+                <div class="read-full-hint">👆 Нажмите, чтобы увидеть полную историю</div>
+            </div>
+
+            <!-- Статистика - лаконичная -->
+            <div class="stats-compact">
+                <span class="stat-compact">💬 <span id="wordsCount">450</span> слов</span>
+                <span class="stat-compact">📸 <span id="imagesCount">0</span> фото</span>
+                <span class="stat-compact">⏱️ <span id="durationCount">8</span> мин</span>
+            </div>
+
+            <!-- Ссылка на управление капсулой -->
+            <div class="capsule-link-card">
+                <p class="capsule-link-text">Для полного управления капсулой времени:</p>
+                <a href="https://dmitrijburlaku.nasledie.digital/" target="_blank" class="capsule-link-button">
+                    🔗 Перейти на Nasledie.Digital
+                </a>
+            </div>
+
+            <div class="action-section">
+                <button class="primary-button" onclick="startNewStory()">🎙️ Создать новую историю</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Media Files Screen -->
+    <div id="mediaFiles" class="screen">
+        <div class="top-bar">
+            <button class="back-button" onclick="goBack()">←</button>
+            <div class="top-logo">Медиафайлы</div>
+            <div class="spacer"></div>
+        </div>
+
+        <div class="container">
+            <div class="media-tabs">
+                <button class="media-tab active" data-tab="photos">📸 Фото</button>
+                <button class="media-tab" data-tab="videos">🎥 Видео</button>
+                <button class="media-tab" data-tab="audio">🎵 Аудио</button>
+            </div>
+
+            <div class="media-grid" id="mediaGrid">
+                <!-- Примеры медиафайлов -->
+                <div class="media-item">
+                    <div class="media-thumbnail">📷</div>
+                    <div class="media-name">Семья 2024</div>
+                </div>
+                <div class="media-item">
+                    <div class="media-thumbnail">📷</div>
+                    <div class="media-name">Отпуск</div>
+                </div>
+                <div class="media-item">
+                    <div class="media-thumbnail">📷</div>
+                    <div class="media-name">День рождения</div>
+                </div>
+            </div>
+
+            <button class="primary-button" onclick="uploadMediaFile()">➕ Загрузить файлы</button>
+        </div>
+    </div>
+
+    <!-- Artifacts Screen -->
+    <div id="artifacts" class="screen">
+        <div class="top-bar">
+            <button class="back-button" onclick="goBack()">←</button>
+            <div class="top-logo">Артефакты</div>
+            <div class="spacer"></div>
+        </div>
+
+        <div class="container">
+            <p class="intro-text">Созданные из ваших воспоминаний</p>
+
+            <div class="artifacts-list">
+                <div class="artifact-card primary">
+                    <div class="artifact-icon">📝</div>
+                    <h3>Записи воспоминаний</h3>
+                    <p>Все ваши необработанные записи - сырые тексты и заметки</p>
+                    <div class="artifact-actions">
+                        <button class="secondary-button" onclick="viewRawMemories()">Просмотреть записи</button>
+                        <a href="https://dmitrijburlaku.nasledie.digital/storyteller" target="_blank" class="storyteller-link">
+                            ✨ Создать историю со Сказочником
+                        </a>
+                    </div>
+                </div>
+
+                <div class="artifact-card">
+                    <div class="artifact-icon">📖</div>
+                    <h3>Книга воспоминаний</h3>
+                    <p>Все ваши истории в одном красивом издании</p>
+                    <button class="secondary-button" onclick="viewArtifact('book')">Посмотреть</button>
+                </div>
+
+                <div class="artifact-card">
+                    <div class="artifact-icon">🌊</div>
+                    <h3>Река жизни</h3>
+                    <p>Визуальная хронология событий</p>
+                    <button class="secondary-button" onclick="viewArtifact('timeline')">Посмотреть</button>
+                </div>
+
+                <div class="artifact-card disabled">
+                    <div class="artifact-icon">🫂</div>
+                    <h3>Круг общения</h3>
+                    <p>Люди в ваших воспоминаниях</p>
+                    <p class="artifact-hint">Доступно после 10 историй</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Nadi Stats Screen -->
+    <div id="nadiStats" class="screen">
+        <div class="top-bar">
+            <button class="back-button" onclick="goBack()">←</button>
+            <div class="top-logo">Nadi в цифрах</div>
+            <div class="spacer"></div>
+        </div>
+
+        <div class="container">
+            <div class="stats-hero">
+                <div class="stats-hero-number">📊</div>
+                <h2>Ваша капсула времени</h2>
+            </div>
+
+            <div class="capsule-card">
+                <div class="progress-bar-large">
+                    <div class="progress-fill" style="width: 45%;"></div>
+                </div>
+                <p class="progress-text">45% заполнено</p>
+
+                <div class="stats-grid">
+                    <div class="stat-box">
+                        <div class="stat-icon">💬</div>
+                        <div class="stat-number">7</div>
+                        <div class="stat-label">Воспоминаний</div>
+                    </div>
+                    <div class="stat-box">
+                        <div class="stat-icon">📸</div>
+                        <div class="stat-number">23</div>
+                        <div class="stat-label">Фотографий</div>
+                    </div>
+                    <div class="stat-box">
+                        <div class="stat-icon">📖</div>
+                        <div class="stat-number">5</div>
+                        <div class="stat-label">Историй</div>
+                    </div>
+                    <div class="stat-box">
+                        <div class="stat-icon">🔥</div>
+                        <div class="stat-number">5</div>
+                        <div class="stat-label">Дней подряд</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="categories-progress">
+                <h3>📚 Разделы вашей истории:</h3>
+
+                <div class="category-item">
+                    <div class="category-header">
+                        <span>🧒 Детство</span>
+                        <span class="category-percent">75%</span>
+                    </div>
+                    <div class="category-bar">
+                        <div class="category-fill" style="width: 75%;"></div>
+                    </div>
+                    <p class="category-details">5 воспоминаний, 8 фото</p>
+                </div>
+
+                <div class="category-item">
+                    <div class="category-header">
+                        <span>👨‍🎓 Школа</span>
+                        <span class="category-percent">30%</span>
+                    </div>
+                    <div class="category-bar">
+                        <div class="category-fill" style="width: 30%;"></div>
+                    </div>
+                    <p class="category-details">2 воспоминания, 3 фото</p>
+                </div>
+
+                <div class="category-item">
+                    <div class="category-header">
+                        <span>👨‍👩‍👧‍👦 Семья</span>
+                        <span class="category-percent">60%</span>
+                    </div>
+                    <div class="category-bar">
+                        <div class="category-fill" style="width: 60%;"></div>
+                    </div>
+                    <p class="category-details">4 воспоминания, 12 фото</p>
+                </div>
+            </div>
+
+            <a href="https://dmitrijburlaku.nasledie.digital/" target="_blank" class="external-link-button">
+                Подробная статистика на Nasledie.Digital →
+            </a>
+        </div>
+    </div>
+
+    <!-- Chat List Screen -->
+    <div id="chatList" class="screen">
+        <div class="top-bar">
+            <button class="back-button" onclick="goBack()">←</button>
+            <div class="top-logo">Все чаты</div>
+            <div class="spacer"></div>
+        </div>
+
+        <div class="container">
+            <div class="search-bar">
+                <input type="text" class="search-input" placeholder="🔍 Поиск...">
+            </div>
+
+            <div class="chat-list-items">
+                <div class="chat-list-item" onclick="openChat(1)">
+                    <div class="chat-avatar">☀️</div>
+                    <div class="chat-info">
+                        <h3>Детство под солнцем</h3>
+                        <p class="chat-preview">Рыбалка с дедом каждое лето...</p>
+                        <p class="chat-date">5 ноября, 10:24</p>
+                    </div>
+                    <div class="chat-badge">12</div>
+                </div>
+
+                <div class="chat-list-item" onclick="openChat(2)">
+                    <div class="chat-avatar">🏠</div>
+                    <div class="chat-info">
+                        <h3>Семейный очаг</h3>
+                        <p class="chat-preview">Дом моего детства...</p>
+                        <p class="chat-date">4 ноября, 18:15</p>
+                    </div>
+                </div>
+
+                <div class="chat-list-item" onclick="openChat(3)">
+                    <div class="chat-avatar">💝</div>
+                    <div class="chat-info">
+                        <h3>Моменты счастья</h3>
+                        <p class="chat-preview">Свадьба дочери...</p>
+                        <p class="chat-date">3 ноября, 20:45</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Account Screen -->
+    <div id="account" class="screen">
+        <div class="top-bar">
+            <button class="back-button" onclick="goBack()">←</button>
+            <div class="top-logo">Аккаунт</div>
+            <div class="spacer"></div>
+        </div>
+
+        <div class="container">
+            <div class="account-profile">
+                <div class="account-avatar">👤</div>
+                <h2 id="accountName">Дмитрий Иванов</h2>
+                <p class="account-email">dmitry@example.com</p>
+            </div>
+
+            <div class="account-sections">
+                <button class="account-item" onclick="editProfile()">
+                    <span class="account-icon">✏️</span>
+                    <span>Редактировать профиль</span>
+                    <span class="account-arrow">→</span>
+                </button>
+
+                <button class="account-item" onclick="showSettings()">
+                    <span class="account-icon">⚙️</span>
+                    <span>Настройки</span>
+                    <span class="account-arrow">→</span>
+                </button>
+
+                <button class="account-item" onclick="showSubscription()">
+                    <span class="account-icon">💳</span>
+                    <span>Подписка</span>
+                    <span class="account-arrow">→</span>
+                </button>
+
+                <button class="account-item" onclick="showAbout()">
+                    <span class="account-icon">ℹ️</span>
+                    <span>О проекте Nadi</span>
+                    <span class="account-arrow">→</span>
+                </button>
+            </div>
+
+            <button class="logout-button" onclick="logout()">Выйти</button>
+        </div>
+    </div>
+
+    <!-- Voice Indicator -->
+    <div id="voiceIndicator" class="voice-indicator">
+        <div class="voice-animation">
+            <div class="voice-bar"></div>
+            <div class="voice-bar"></div>
+            <div class="voice-bar"></div>
+            <div class="voice-bar"></div>
+            <div class="voice-bar"></div>
+        </div>
+        <p class="voice-text">Говорите...</p>
+        <button class="stop-voice-button" onclick="stopVoice()">Остановить</button>
+    </div>
+
+    <!-- Full Story Page (Instagram-style) -->
+    <div id="fullStoryPage" class="screen">
+        <div class="story-page-header">
+            <button class="back-button" onclick="closeFullStory()">←</button>
+            <div class="header-title">История</div>
+            <button class="share-header-button" onclick="shareStory()" title="Поделиться">📤</button>
+        </div>
+
+        <div class="story-page-content" id="storyPageContent">
+            <!-- Индикатор свайпа -->
+            <div class="swipe-indicator" id="swipeIndicator">
+                <div class="swipe-hint">← Свайпните для навигации →</div>
+            </div>
+
+            <!-- Фото (Instagram style) -->
+            <div class="story-photo-container">
+                <div class="story-photo" id="storyPhoto">
+                    <div class="photo-placeholder">📷</div>
+                </div>
+                <button class="change-photo-button" onclick="changeStoryPhoto()">
+                    <span>📸 Изменить фото</span>
+                </button>
+            </div>
+
+            <!-- Текст истории -->
+            <div class="story-text-container">
+                <!-- ИСТОРИЯ -->
+                <div class="story-title-section">
+                    <h2 id="fullStoryTitle" class="story-page-title">📖 Рыбалка с дедом</h2>
+                    <button class="icon-button" onclick="editStory()">✏️</button>
+                </div>
+                <div id="fullStoryContent" class="story-editable-text" contenteditable="false">
+                    <p>Каждое лето, с июля до сентября, мы с дедом ходили на рыбалку. Помню, как однажды поймал щуку больше килограмма — дед так гордился. Он говорил, что в августе лучший клёв.</p>
+                    <p>Мы вставали рано утром, когда ещё солнце не взошло. Дед готовил снасти, а я помогал копать червей. Дорога до озера занимала около получаса пешком через лес.</p>
+                    <p>Больше всего я любил момент, когда поплавок начинал дёргаться. Дед учил меня терпению — не торопиться, дождаться правильного момента. Эти уроки остались со мной на всю жизнь.</p>
+                </div>
+
+                <!-- БЛОК МЕТАДАННЫХ (ДЕТАЛИ) -->
+                <div class="story-metadata">
+                    <div class="metadata-header">
+                        <h3>Детали истории</h3>
+                        <span class="completion-badge">Заполнено на 75%</span>
+                    </div>
+
+                    <div class="metadata-list">
+                        <div class="metadata-item completed">
+                            <span class="icon">📸</span>
+                            <span class="label">Фото:</span>
+                            <span class="value">3 шт.</span>
+                            <span class="status">✓ Описаны</span>
+                        </div>
+
+                        <div class="metadata-item incomplete">
+                            <span class="icon">📍</span>
+                            <span class="label">Место:</span>
+                            <span class="value empty">Не указано</span>
+                            <button class="add-btn">+</button>
+                        </div>
+
+                        <div class="metadata-item completed">
+                            <span class="icon">📅</span>
+                            <span class="label">Время:</span>
+                            <input type="text" class="value-input" value="Лето 1995-2005" placeholder="Укажите период">
+                            <button class="edit-btn" onclick="editMetadata(this)">✏️</button>
+                        </div>
+
+                        <div class="metadata-item partial">
+                            <span class="icon">👥</span>
+                            <span class="label">Участники:</span>
+                            <span class="value">Я, Дед</span>
+                            <button class="add-btn">+</button>
+                        </div>
+
+                        <div class="metadata-item partial">
+                            <span class="icon">🏷️</span>
+                            <span class="label">Теги:</span>
+                            <div class="tags-container">
+                                <span class="tag">рыбалка</span>
+                                <span class="tag">детство</span>
+                                <span class="tag">дед</span>
+                                <span class="tag">лето</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- CTA БЛОК -->
+                <div class="capsule-cta">
+                    <div class="cta-icon">✨</div>
+                    <h3>Сохранить в капсулу?</h3>
+                    <p class="cta-description">
+                        Эта история, твои диалоги и фотографии будут доступны твоим внукам всегда
+                    </p>
+
+                    <div class="cta-benefits">
+                        <div class="benefit-item">
+                            <span class="benefit-icon">📖</span>
+                            <span class="benefit-text">Оживление истории с помощью Сказочника</span>
+                        </div>
+                        <div class="benefit-item">
+                            <span class="benefit-icon">🌳</span>
+                            <span class="benefit-text">Создание древа семьи</span>
+                        </div>
+                        <div class="benefit-item">
+                            <span class="benefit-icon">🎨</span>
+                            <span class="benefit-text">Генерация артефактов из воспоминаний</span>
+                        </div>
+                        <div class="benefit-item">
+                            <span class="benefit-icon">🔐</span>
+                            <span class="benefit-text">Гарантированное хранение 100+ лет</span>
+                        </div>
+                    </div>
+
+                    <button class="btn-save-forever">
+                        🏛️ Сохранить навсегда
+                    </button>
+
+                    <div class="guarantee-info">
+                        <div class="guarantee-icon">🏛️</div>
+                        <div class="guarantee-text">
+                            <strong>Фонд долговременного хранения</strong>
+                            <p>Ваши истории сохранятся благодаря эндаументу и резервированию</p>
+                        </div>
+                    </div>
+
+                    <button class="btn-secondary-cta" onclick="continueEditing()">
+                        Продолжить редактирование
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>
