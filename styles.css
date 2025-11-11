@@ -1,5 +1,5 @@
-/* Nadi - Seniors4Change Style */
-/* Seniors-friendly принципы: крупные элементы, высокий контраст, простота */
+/* Nadi - Dark Theme with Teal Accent */
+/* Современный тёмный дизайн */
 
 * {
     margin: 0;
@@ -8,27 +8,28 @@
 }
 
 :root {
-    /* Seniors4Change цветовая палитра */
-    --primary-color: #FFD93D; /* Основной жёлтый - акцент */
-    --secondary-color: #4CAF50; /* Зелёный - sustainability */
-    --tertiary-color: #2196F3; /* Синий - digital literacy */
-    --background: #F5F5F5; /* Светлый фон */
-    --background-white: #FFFFFF; /* Белые блоки */
-    --text-color: #2C3E50; /* Тёмный текст - высокий контраст 4.5:1 */
-    --text-secondary: #90A4AE; /* Серый - второстепенный текст */
-    --nadi-bubble: #FFFFFF; /* Белый для сообщений Nadi */
-    --user-bubble: #FFD93D; /* Жёлтый для сообщений пользователя */
-    --shadow: 0 2px 8px rgba(0,0,0,0.1);
-    --shadow-hover: 0 4px 12px rgba(0,0,0,0.15);
+    /* Тёмная цветовая палитра */
+    --primary-color: #24f2bf; /* Яркий бирюзовый - акцент */
+    --secondary-color: #24f2bf; /* Бирюзовый для всех акцентов */
+    --tertiary-color: #1ab89c; /* Темнее бирюзовый для hover */
+    --background: #242326; /* Основной тёмно-серый фон */
+    --background-dark: #15181f; /* Ещё темнее для header/cards */
+    --background-white: #2d2d30; /* "Белые" блоки - светло-серые */
+    --text-color: #ffffff; /* Белый текст */
+    --text-secondary: #a0a0a0; /* Серый - второстепенный текст */
+    --nadi-bubble: #2d2d30; /* Тёмно-серый для сообщений Nadi */
+    --user-bubble: #24f2bf; /* Бирюзовый для сообщений пользователя */
+    --shadow: 0 2px 8px rgba(0,0,0,0.3);
+    --shadow-hover: 0 4px 12px rgba(36,242,191,0.2);
 
     /* Базовая единица для grid */
     --base-unit: 8px;
 
-    /* Seniors-friendly типографика - КРУПНЫЕ размеры */
+    /* Типографика - крупные размеры */
     --font-h1: 36px;
     --font-h2: 28px;
     --font-h3: 22px;
-    --font-body: 18px; /* Базовый размер - больше стандартного */
+    --font-body: 18px;
     --font-caption: 16px;
 
     /* Скругление углов */
@@ -40,11 +41,11 @@
 }
 
 body {
-    font-family: 'Verdana', 'Arial', sans-serif;
+    font-family: 'SB Sans Text', 'SB Sans Display', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
     background-color: var(--background);
     color: var(--text-color);
     font-size: var(--font-body);
-    line-height: 1.6; /* Важно для читаемости seniors */
+    line-height: 1.6;
     font-weight: 400;
     overflow-x: hidden;
 }
@@ -105,7 +106,7 @@ p {
 
 /* Splash Screen */
 #splash {
-    background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+    background: linear-gradient(135deg, var(--background-dark), var(--background));
     position: fixed;
     top: 0;
     left: 0;
@@ -147,27 +148,26 @@ p {
 }
 
 .splash-message {
-    background: rgba(255, 255, 255, 0.1);
+    background: rgba(36, 242, 191, 0.05);
     border-radius: var(--border-radius-large);
     padding: calc(var(--base-unit) * 4);
     margin-bottom: calc(var(--base-unit) * 4);
     backdrop-filter: blur(10px);
-    border: 1px solid rgba(255, 255, 255, 0.2);
+    border: 2px solid rgba(36, 242, 191, 0.3);
     animation: fadeInUp 0.8s ease-out 0.3s backwards;
 }
 
 .splash-title {
-    font-size: 24px;
+    font-size: 28px;
     font-weight: 600;
-    color: white;
+    color: var(--primary-color); /* Бирюзовый заголовок */
     margin: 0 0 calc(var(--base-unit) * 3) 0;
     line-height: 1.5;
-    opacity: 0.95;
 }
 
 .splash-subtitle {
     font-size: 18px;
-    color: rgba(255, 255, 255, 0.9);
+    color: var(--text-color);
     line-height: 1.6;
     margin: 0;
 }
@@ -313,47 +313,48 @@ h3 {
 
 /* Кнопки */
 .primary-button {
-    background: var(--secondary-color); /* Зелёный для primary */
-    color: white;
+    background: var(--primary-color); /* Бирюзовый для primary */
+    color: var(--background-dark); /* Тёмный текст для контраста */
     border: none;
     border-radius: var(--border-radius);
     padding: calc(var(--base-unit) * 2) calc(var(--base-unit) * 4);
     font-size: var(--font-body);
     font-weight: 600;
-    font-family: 'Verdana', 'Arial', sans-serif;
+    font-family: 'SB Sans Text', sans-serif;
     cursor: pointer;
     transition: all 0.3s ease;
     box-shadow: var(--shadow);
-    min-height: var(--min-touch-target); /* 44px минимум для seniors */
+    min-height: var(--min-touch-target);
     min-width: var(--min-touch-target);
     line-height: 1.5;
 }
 
 .primary-button:hover, .primary-button:active {
-    background: #45a049; /* Тёмно-зелёный при hover */
+    background: var(--tertiary-color); /* Темнее бирюзовый при hover */
     box-shadow: var(--shadow-hover);
     transform: translateY(-2px);
 }
 
 .secondary-button {
-    background: var(--primary-color); /* Жёлтый для secondary */
+    background: transparent;
     color: var(--text-color);
-    border: none;
+    border: 2px solid var(--primary-color); /* Бирюзовая граница */
     border-radius: var(--border-radius);
     padding: calc(var(--base-unit) * 2) calc(var(--base-unit) * 4);
     font-size: var(--font-body);
     font-weight: 600;
-    font-family: 'Verdana', 'Arial', sans-serif;
+    font-family: 'SB Sans Text', sans-serif;
     cursor: pointer;
     transition: all 0.3s ease;
-    min-height: var(--min-touch-target); /* 44px минимум */
+    min-height: var(--min-touch-target);
     width: 100%;
     margin-bottom: calc(var(--base-unit) * 2);
     box-shadow: var(--shadow);
 }
 
 .secondary-button:hover, .secondary-button:active {
-    background: #ffed4e; /* Светло-жёлтый при hover */
+    background: var(--primary-color); /* Заполнение бирюзовым при hover */
+    color: var(--background-dark);
     transform: translateY(-2px);
     box-shadow: var(--shadow-hover);
 }
@@ -533,7 +534,7 @@ h3 {
 
 .theme-card {
     background: var(--background-white);
-    border: 2px solid #E0E0E0;
+    border: 2px solid rgba(36, 242, 191, 0.2); /* Полупрозрачная бирюзовая граница */
     border-radius: var(--border-radius-large);
     padding: calc(var(--base-unit) * 3);
     box-shadow: var(--shadow);
@@ -543,14 +544,14 @@ h3 {
     align-items: center;
     gap: calc(var(--base-unit) * 2);
     text-align: left;
-    min-height: var(--min-touch-target); /* 44px минимум */
+    min-height: var(--min-touch-target);
 }
 
 .theme-card:hover, .theme-card:active {
     box-shadow: var(--shadow-hover);
     transform: translateY(-2px);
-    border-color: var(--primary-color);
-    background: #FFFDF5; /* Лёгкий жёлтый оттенок */
+    border-color: var(--primary-color); /* Яркая бирюзовая граница */
+    background: rgba(36, 242, 191, 0.05); /* Лёгкий бирюзовый оттенок */
 }
 
 .theme-icon {
@@ -868,20 +869,21 @@ h3 {
     word-wrap: break-word;
     width: 100%;
     box-shadow: var(--shadow);
-    border: 2px solid #E0E0E0;
+    border: 2px solid rgba(36, 242, 191, 0.2);
 }
 
 .message.nadi .message-bubble {
     border-bottom-left-radius: 4px;
     background: var(--background-white);
-    border-color: var(--secondary-color);
+    border-color: rgba(36, 242, 191, 0.3);
+    color: var(--text-color);
 }
 
 .message.user .message-bubble {
     background: var(--user-bubble);
     border-bottom-right-radius: 4px;
     border-color: var(--primary-color);
-    color: var(--text-color);
+    color: var(--background-dark); /* Тёмный текст на бирюзовом фоне */
 }
 
 .message-time {
@@ -1214,14 +1216,18 @@ h3 {
     width: 100%;
     padding: calc(var(--base-unit) * 2);
     font-size: var(--font-body);
-    border: 2px solid #E0E0E0;
+    border: 2px solid rgba(36, 242, 191, 0.3);
     border-radius: var(--border-radius);
     outline: none;
     transition: border-color 0.3s ease;
+    background: var(--background-white);
+    color: var(--text-color);
+    font-family: 'SB Sans Text', sans-serif;
 }
 
 .form-input:focus {
     border-color: var(--primary-color);
+    box-shadow: 0 0 0 3px rgba(36, 242, 191, 0.1);
 }
 
 .checkbox-group {
@@ -2367,12 +2373,13 @@ h3 {
     align-items: center;
     gap: calc(var(--base-unit) * 2);
     padding: calc(var(--base-unit) * 3);
-    background: var(--background-white);
-    box-shadow: var(--shadow);
+    background: var(--background-dark); /* Тёмный header */
+    box-shadow: 0 2px 8px rgba(0,0,0,0.5);
     position: sticky;
     top: 0;
     z-index: 100;
-    min-height: 80px; /* Seniors-friendly высота */
+    min-height: 80px;
+    border-bottom: 1px solid rgba(36, 242, 191, 0.2);
 }
 
 /* Стили объединены с .back-button выше */
