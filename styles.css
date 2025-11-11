@@ -730,6 +730,7 @@ h3 {
     align-items: center;
     justify-content: center;
     flex-shrink: 0;
+    color: var(--text-color); /* Белый текст для читаемости */
 }
 
 .history-button:hover,
@@ -1014,6 +1015,7 @@ h3 {
     min-height: 32px;
     max-height: 120px;
     line-height: 1.4;
+    color: var(--text-color); /* Белый текст для читаемости */
 }
 
 .voice-button {
@@ -1177,7 +1179,7 @@ h3 {
 .story-preview {
     font-size: var(--font-body);
     line-height: 1.7;
-    color: #444;
+    color: var(--text-secondary); /* Серый текст для читаемости */
     margin-bottom: calc(var(--base-unit) * 2);
 }
 
@@ -1259,7 +1261,7 @@ h3 {
 .divider {
     text-align: center;
     margin: calc(var(--base-unit) * 3) 0;
-    color: #999;
+    color: var(--text-secondary); /* Серый текст для читаемости */
     position: relative;
 }
 
@@ -1532,6 +1534,8 @@ h3 {
     border: 2px solid rgba(36, 242, 191, 0.2);
     border-radius: var(--border-radius);
     outline: none;
+    background: var(--background-white);
+    color: var(--text-color); /* Белый текст для читаемости */
 }
 
 .search-input:focus {
@@ -1596,7 +1600,7 @@ h3 {
 
 .timeline-divider {
     text-align: center;
-    color: #999;
+    color: var(--text-secondary); /* Серый текст для читаемости */
     margin: calc(var(--base-unit) * 2) 0;
     font-size: var(--font-caption);
 }
@@ -1640,6 +1644,7 @@ h3 {
     align-items: center;
     justify-content: center;
     transition: all 0.3s ease;
+    color: var(--text-color); /* Белый текст для читаемости */
 }
 
 .share-header-button:hover,
@@ -1761,7 +1766,7 @@ h3 {
 .story-editable-text {
     font-size: var(--font-body);
     line-height: 1.8;
-    color: #444;
+    color: var(--text-color); /* Белый текст для читаемости */
     min-height: 200px;
     padding: calc(var(--base-unit) * 2);
     border-radius: var(--border-radius);
@@ -1923,7 +1928,7 @@ h3 {
     border-radius: 6px;
     padding: 6px 10px;
     font-size: 14px;
-    color: #2C3E50;
+    color: var(--text-color); /* Белый текст для читаемости */
     background: var(--background-white);
     transition: all 0.3s;
 }
@@ -2329,7 +2334,7 @@ h3 {
     border: none;
     font-size: 28px;
     cursor: pointer;
-    color: #999;
+    color: var(--text-secondary); /* Серый текст для читаемости */
 }
 
 .menu-nav {
@@ -2349,6 +2354,7 @@ h3 {
     text-align: left;
     cursor: pointer;
     transition: background 0.2s ease;
+    color: var(--text-color); /* Белый текст для читаемости */
 }
 
 .menu-item:hover {
@@ -2649,7 +2655,7 @@ h3 {
 
 .artifact-hint {
     font-size: 14px;
-    color: #999;
+    color: var(--text-secondary); /* Серый текст для читаемости */
     font-style: italic;
 }
 
@@ -2822,7 +2828,7 @@ h3 {
 
 .chat-date {
     font-size: 12px;
-    color: #999;
+    color: var(--text-secondary); /* Серый текст для читаемости */
 }
 
 .chat-badge {
@@ -2894,7 +2900,7 @@ h3 {
 .account-arrow {
     margin-left: auto;
     font-size: 20px;
-    color: #999;
+    color: var(--text-secondary); /* Серый текст для читаемости */
 }
 
 .logout-button {
