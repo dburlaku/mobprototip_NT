@@ -113,6 +113,32 @@ body {
     }
 }
 
+.splash-message {
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: var(--border-radius-large);
+    padding: calc(var(--base-unit) * 4);
+    margin-bottom: calc(var(--base-unit) * 4);
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    animation: fadeInUp 0.8s ease-out 0.3s backwards;
+}
+
+.splash-title {
+    font-size: 24px;
+    font-weight: 600;
+    color: white;
+    margin: 0 0 calc(var(--base-unit) * 3) 0;
+    line-height: 1.5;
+    opacity: 0.95;
+}
+
+.splash-subtitle {
+    font-size: 18px;
+    color: rgba(255, 255, 255, 0.9);
+    line-height: 1.6;
+    margin: 0;
+}
+
 .research-section {
     background: rgba(255, 255, 255, 0.15);
     border-radius: var(--border-radius-large);
@@ -768,12 +794,16 @@ h3 {
 .message.nadi {
     display: flex;
     gap: calc(var(--base-unit) * 1);
+    align-items: flex-start;
+    justify-content: flex-start;
 }
 
 .message.user {
     display: flex;
     gap: calc(var(--base-unit) * 1);
     flex-direction: row-reverse;
+    align-items: flex-start;
+    justify-content: flex-start;
 }
 
 .message-avatar {
@@ -781,13 +811,20 @@ h3 {
     flex-shrink: 0;
 }
 
+.message > div {
+    display: flex;
+    flex-direction: column;
+    max-width: 75%;
+}
+
 .message-bubble {
     background: var(--nadi-bubble);
     padding: calc(var(--base-unit) * 2) calc(var(--base-unit) * 3);
     border-radius: var(--border-radius-large);
-    max-width: 75%;
     font-size: var(--font-body);
-    line-height: 1.5;
+    line-height: 1.6;
+    word-wrap: break-word;
+    width: 100%;
 }
 
 .message.nadi .message-bubble {
@@ -803,6 +840,13 @@ h3 {
     font-size: 14px;
     color: #888;
     margin-top: calc(var(--base-unit) * 0.5);
+}
+
+.message.nadi .message-time {
+    text-align: left;
+}
+
+.message.user .message-time {
     text-align: right;
 }
 
@@ -1032,8 +1076,35 @@ h3 {
 /* Результат */
 .result-header {
     text-align: center;
-    margin-bottom: calc(var(--base-unit) * 3);
+    margin-bottom: calc(var(--base-unit) * 4);
     margin-top: calc(var(--base-unit) * 4);
+}
+
+.result-header h1 {
+    font-size: var(--font-h1);
+    color: var(--text-color);
+    margin-bottom: calc(var(--base-unit) * 2);
+    line-height: 1.4;
+}
+
+.result-subtitle {
+    font-size: 18px;
+    color: var(--secondary-color);
+    margin-top: calc(var(--base-unit) * 1);
+    font-style: italic;
+    opacity: 0.9;
+}
+
+.capsule-note {
+    text-align: center;
+    font-size: 17px;
+    color: var(--text-color);
+    opacity: 0.8;
+    line-height: 1.6;
+    margin: calc(var(--base-unit) * 3) 0;
+    padding: calc(var(--base-unit) * 2);
+    background: rgba(122, 155, 118, 0.05);
+    border-radius: var(--border-radius);
 }
 
 .story-card {
