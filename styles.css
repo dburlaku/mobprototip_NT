@@ -8,15 +8,15 @@
 }
 
 :root {
-    /* Цветовая палитра - теплые, доверительные тона */
-    --primary-color: #D4A373; /* Золотистый */
-    --secondary-color: #8FB996; /* Мягкий зеленый */
-    --background: #FAF8F5; /* Теплый белый */
-    --text-color: #2C2C2C; /* Почти черный */
-    --nadi-bubble: #F5EFE6; /* Бежевый для сообщений Nadi */
-    --user-bubble: #E8F5E9; /* Светло-зеленый для сообщений пользователя */
-    --shadow: 0 2px 8px rgba(0,0,0,0.1);
-    --shadow-hover: 0 4px 12px rgba(0,0,0,0.15);
+    /* Цветовая палитра - лен, мох, старое золото, белый воздух */
+    --primary-color: #C9A961; /* Старое золото */
+    --secondary-color: #7A9B76; /* Мох */
+    --background: #F9F7F4; /* Белый воздух */
+    --text-color: #3A3A3A; /* Мягкий черный */
+    --nadi-bubble: #EAE4D8; /* Лен для сообщений Nadi */
+    --user-bubble: #D8E5D6; /* Светлый мох для сообщений пользователя */
+    --shadow: 0 2px 12px rgba(0,0,0,0.08);
+    --shadow-hover: 0 4px 16px rgba(0,0,0,0.12);
 
     /* Базовая единица для grid */
     --base-unit: 8px;
