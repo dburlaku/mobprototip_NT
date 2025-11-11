@@ -1789,7 +1789,7 @@ h3 {
 
 /* === МЕТАДАННЫЕ ИСТОРИИ === */
 .story-metadata {
-    background: #F8F9FA;
+    background: var(--background-white); /* Темный фон для темной темы */
     border-radius: 12px;
     padding: 20px;
     margin-top: 24px;
@@ -1806,7 +1806,7 @@ h3 {
 .metadata-header h3 {
     font-size: 18px;
     font-weight: 600;
-    color: #2C3E50;
+    color: var(--text-color); /* Белый текст для читаемости */
     margin: 0;
     text-align: left;
 }
@@ -1832,9 +1832,9 @@ h3 {
     align-items: center;
     gap: 8px;
     padding: 12px;
-    background: var(--background-white);
+    background: var(--background);
     border-radius: 8px;
-    border: 1px solid #E1E8ED;
+    border: 1px solid rgba(36, 242, 191, 0.2); /* Бирюзовая граница */
 }
 
 .metadata-item .icon {
@@ -1845,7 +1845,7 @@ h3 {
 .metadata-item .label {
     font-size: 14px;
     font-weight: 600;
-    color: #7F8C8D;
+    color: var(--text-secondary); /* Серый текст для читаемости */
     min-width: 80px;
     flex-shrink: 0;
 }
@@ -1853,12 +1853,12 @@ h3 {
 .metadata-item .value {
     flex: 1;
     font-size: 14px;
-    color: #2C3E50;
+    color: var(--text-color); /* Белый текст для читаемости */
     min-width: 100px;
 }
 
 .metadata-item .value.empty {
-    color: #BDC3C7;
+    color: var(--text-secondary); /* Серый текст для пустых значений */
     font-style: italic;
 }
 
@@ -1948,13 +1948,13 @@ h3 {
 
 .tag {
     display: inline-block;
-    background: linear-gradient(135deg, rgba(212,163,115,0.15), rgba(143,185,150,0.15));
-    color: #2C3E50;
+    background: rgba(36, 242, 191, 0.1); /* Легкий бирюзовый фон */
+    color: var(--primary-color); /* Бирюзовый текст для читаемости */
     padding: 4px 10px;
     border-radius: 12px;
     font-size: 13px;
     font-weight: 500;
-    border: 1px solid rgba(212,163,115,0.3);
+    border: 1px solid rgba(36, 242, 191, 0.3);
 }
 
 /* === CTA БЛОК === */
@@ -2028,8 +2028,8 @@ h3 {
 }
 
 .btn-save-forever {
-    background: var(--background-white);
-    color: #667eea;
+    background: var(--primary-color); /* Бирюзовый фон */
+    color: var(--background-dark); /* Темный текст на бирюзовом */
     border: none;
     padding: 16px 32px;
     border-radius: 12px;
@@ -2157,19 +2157,19 @@ h3 {
 .social-proof-card h2 {
     font-size: 18px;
     font-weight: 600;
-    color: #2C3E50;
+    color: var(--text-color); /* Белый текст для читаемости */
     margin: 0 0 16px 0;
 }
 
 .research-quote {
     font-size: 16px;
     font-style: italic;
-    color: #4A90E2;
+    color: var(--primary-color); /* Бирюзовый текст */
     margin: 0 0 16px 0;
     padding: 16px;
-    background: #F0F7FF;
+    background: rgba(36, 242, 191, 0.1); /* Легкий бирюзовый фон */
     border-radius: 8px;
-    border-left: 4px solid #4A90E2;
+    border-left: 4px solid var(--primary-color);
 }
 
 .research-source {
@@ -2178,7 +2178,7 @@ h3 {
     justify-content: center;
     gap: 8px;
     font-size: 14px;
-    color: #7F8C8D;
+    color: var(--text-secondary); /* Серый текст для читаемости */
 }
 
 .source-icon {
@@ -2217,8 +2217,8 @@ h3 {
 
 .btn-start {
     width: 100%;
-    background: var(--background-white);
-    color: #667eea;
+    background: var(--primary-color); /* Бирюзовый фон */
+    color: var(--background-dark); /* Темный текст на бирюзовом */
     border: none;
     padding: 18px;
     border-radius: 12px;
