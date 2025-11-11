@@ -1,5 +1,5 @@
-/* Nadi - Стили для аудитории 55+ */
-/* Основные принципы: крупные элементы, высокая читаемость, теплые тона */
+/* Nadi - Seniors4Change Style */
+/* Seniors-friendly принципы: крупные элементы, высокий контраст, простота */
 
 * {
     margin: 0;
@@ -8,37 +8,44 @@
 }
 
 :root {
-    /* Цветовая палитра - лен, мох, старое золото, белый воздух */
-    --primary-color: #C9A961; /* Старое золото */
-    --secondary-color: #7A9B76; /* Мох */
-    --background: #F9F7F4; /* Белый воздух */
-    --text-color: #3A3A3A; /* Мягкий черный */
-    --nadi-bubble: #EAE4D8; /* Лен для сообщений Nadi */
-    --user-bubble: #D8E5D6; /* Светлый мох для сообщений пользователя */
-    --shadow: 0 2px 12px rgba(0,0,0,0.08);
-    --shadow-hover: 0 4px 16px rgba(0,0,0,0.12);
+    /* Seniors4Change цветовая палитра */
+    --primary-color: #FFD93D; /* Основной жёлтый - акцент */
+    --secondary-color: #4CAF50; /* Зелёный - sustainability */
+    --tertiary-color: #2196F3; /* Синий - digital literacy */
+    --background: #F5F5F5; /* Светлый фон */
+    --background-white: #FFFFFF; /* Белые блоки */
+    --text-color: #2C3E50; /* Тёмный текст - высокий контраст 4.5:1 */
+    --text-secondary: #90A4AE; /* Серый - второстепенный текст */
+    --nadi-bubble: #FFFFFF; /* Белый для сообщений Nadi */
+    --user-bubble: #FFD93D; /* Жёлтый для сообщений пользователя */
+    --shadow: 0 2px 8px rgba(0,0,0,0.1);
+    --shadow-hover: 0 4px 12px rgba(0,0,0,0.15);
 
     /* Базовая единица для grid */
     --base-unit: 8px;
 
-    /* Типографика - крупные, читаемые размеры */
-    --font-h1: 28px;
-    --font-h2: 22px;
-    --font-h3: 20px;
-    --font-body: 18px; /* Увеличено для лучшей читаемости */
+    /* Seniors-friendly типографика - КРУПНЫЕ размеры */
+    --font-h1: 36px;
+    --font-h2: 28px;
+    --font-h3: 22px;
+    --font-body: 18px; /* Базовый размер - больше стандартного */
     --font-caption: 16px;
 
     /* Скругление углов */
-    --border-radius: 12px;
-    --border-radius-large: 16px;
+    --border-radius: 8px;
+    --border-radius-large: 12px;
+
+    /* Минимальные размеры для кликабельных элементов */
+    --min-touch-target: 44px;
 }
 
 body {
-    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Helvetica Neue', Arial, sans-serif;
+    font-family: 'Verdana', 'Arial', sans-serif;
     background-color: var(--background);
     color: var(--text-color);
     font-size: var(--font-body);
-    line-height: 1.6;
+    line-height: 1.6; /* Важно для читаемости seniors */
+    font-weight: 400;
     overflow-x: hidden;
 }
 
@@ -65,9 +72,35 @@ body {
     }
 }
 
+/* Seniors-friendly типографика */
+h1, h2, h3, h4, h5, h6 {
+    font-weight: 600;
+    line-height: 1.3;
+    color: var(--text-color);
+    margin-bottom: calc(var(--base-unit) * 2);
+}
+
+h1 {
+    font-size: var(--font-h1);
+}
+
+h2 {
+    font-size: var(--font-h2);
+}
+
+h3 {
+    font-size: var(--font-h3);
+}
+
+p {
+    margin-bottom: calc(var(--base-unit) * 2);
+    line-height: 1.6;
+}
+
 .container {
     max-width: 600px;
     margin: 0 auto;
+    padding: calc(var(--base-unit) * 2);
 }
 
 /* Splash Screen */
@@ -280,43 +313,49 @@ h3 {
 
 /* Кнопки */
 .primary-button {
-    background: var(--primary-color);
+    background: var(--secondary-color); /* Зелёный для primary */
     color: white;
     border: none;
     border-radius: var(--border-radius);
     padding: calc(var(--base-unit) * 2) calc(var(--base-unit) * 4);
     font-size: var(--font-body);
     font-weight: 600;
+    font-family: 'Verdana', 'Arial', sans-serif;
     cursor: pointer;
     transition: all 0.3s ease;
     box-shadow: var(--shadow);
-    min-height: 56px; /* Крупная кнопка для удобства */
+    min-height: var(--min-touch-target); /* 44px минимум для seniors */
+    min-width: var(--min-touch-target);
+    line-height: 1.5;
 }
 
 .primary-button:hover, .primary-button:active {
-    background: #C99363;
+    background: #45a049; /* Тёмно-зелёный при hover */
     box-shadow: var(--shadow-hover);
-    transform: translateY(-1px);
+    transform: translateY(-2px);
 }
 
 .secondary-button {
-    background: white;
+    background: var(--primary-color); /* Жёлтый для secondary */
     color: var(--text-color);
-    border: 2px solid var(--primary-color);
+    border: none;
     border-radius: var(--border-radius);
     padding: calc(var(--base-unit) * 2) calc(var(--base-unit) * 4);
     font-size: var(--font-body);
     font-weight: 600;
+    font-family: 'Verdana', 'Arial', sans-serif;
     cursor: pointer;
     transition: all 0.3s ease;
-    min-height: 56px;
+    min-height: var(--min-touch-target); /* 44px минимум */
     width: 100%;
     margin-bottom: calc(var(--base-unit) * 2);
+    box-shadow: var(--shadow);
 }
 
 .secondary-button:hover, .secondary-button:active {
-    background: var(--background);
-    border-color: #C99363;
+    background: #ffed4e; /* Светло-жёлтый при hover */
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-hover);
 }
 
 .text-button {
@@ -493,8 +532,8 @@ h3 {
 }
 
 .theme-card {
-    background: white;
-    border: none;
+    background: var(--background-white);
+    border: 2px solid #E0E0E0;
     border-radius: var(--border-radius-large);
     padding: calc(var(--base-unit) * 3);
     box-shadow: var(--shadow);
@@ -504,11 +543,14 @@ h3 {
     align-items: center;
     gap: calc(var(--base-unit) * 2);
     text-align: left;
+    min-height: var(--min-touch-target); /* 44px минимум */
 }
 
 .theme-card:hover, .theme-card:active {
     box-shadow: var(--shadow-hover);
-    transform: translateX(4px);
+    transform: translateY(-2px);
+    border-color: var(--primary-color);
+    background: #FFFDF5; /* Лёгкий жёлтый оттенок */
 }
 
 .theme-icon {
@@ -825,15 +867,21 @@ h3 {
     line-height: 1.6;
     word-wrap: break-word;
     width: 100%;
+    box-shadow: var(--shadow);
+    border: 2px solid #E0E0E0;
 }
 
 .message.nadi .message-bubble {
     border-bottom-left-radius: 4px;
+    background: var(--background-white);
+    border-color: var(--secondary-color);
 }
 
 .message.user .message-bubble {
     background: var(--user-bubble);
     border-bottom-right-radius: 4px;
+    border-color: var(--primary-color);
+    color: var(--text-color);
 }
 
 .message-time {
@@ -2318,12 +2366,13 @@ h3 {
     display: flex;
     align-items: center;
     gap: calc(var(--base-unit) * 2);
-    padding: calc(var(--base-unit) * 2);
-    background: white;
+    padding: calc(var(--base-unit) * 3);
+    background: var(--background-white);
     box-shadow: var(--shadow);
     position: sticky;
     top: 0;
     z-index: 100;
+    min-height: 80px; /* Seniors-friendly высота */
 }
 
 /* Стили объединены с .back-button выше */
