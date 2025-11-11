@@ -51,19 +51,13 @@
         <div class="splash-content">
             <div class="logo">🌿 Nadi</div>
 
-            <div class="research-section">
-                <h3 class="research-title">Основано на исследованиях:</h3>
-                <blockquote class="research-quote">
-                    "Терапия воспоминаниями снижает депрессию на 61%"
-                </blockquote>
-                <div class="research-source">
-                    <span class="source-icon">🎓</span>
-                    <span>Поддержка учёных и психологов</span>
-                </div>
+            <div class="splash-message">
+                <h1 class="splash-title">Память — это не просто прошлое.<br>Это способ быть живым.</h1>
+                <p class="splash-subtitle">Добро пожаловать в пространство Nadi — место, где воспоминания обретают смысл.</p>
             </div>
 
             <button type="button" class="primary-button splash-start-btn">
-                Начать →
+                → Войти в пространство памяти
             </button>
         </div>
     </div>
@@ -101,8 +95,7 @@
     <!-- Registration Screen (для нового пользователя) -->
     <div id="registration" class="screen">
         <div class="container">
-            <h1>👋 Добро пожаловать в Nadi!</h1>
-            <p class="intro-text">Для начала работы представьтесь, пожалуйста</p>
+            <h1>Как мне к вам обращаться,<br>когда мы будем говорить о важном?</h1>
 
             <div class="form-group">
                 <input type="text" id="userName" class="form-input" placeholder="Ваше имя" maxlength="50">
@@ -110,7 +103,7 @@
 
             <button class="primary-button full-width" onclick="completeRegistration()">Продолжить</button>
 
-            <p class="hint-text">Имя нужно, чтобы я мог обращаться к вам лично</p>
+            <p class="hint-text">Имя — это мост между памятью и присутствием.</p>
         </div>
     </div>
 
@@ -123,8 +116,8 @@
         </div>
 
         <div class="container">
-            <h1 id="welcomeTitle">👋 Добро пожаловать!</h1>
-            <p class="intro-text" id="welcomeText">Я — Nadi, ваш персональный помощник в сохранении воспоминаний</p>
+            <h1 id="welcomeTitle">Я — Nadi.</h1>
+            <p class="intro-text" id="welcomeText">Мы вместе попробуем услышать, что хранит ваша память.<br>Иногда одно слово способно вернуть целый мир.</p>
 
             <!-- Секция для продвинутого пользователя с темами -->
             <div id="advancedUserTopics" style="display: none;">
@@ -167,9 +160,9 @@
 
             <div class="main-action" id="mainAction">
                 <button class="primary-button large" onclick="startStory()">
-                    🎙️ Начать разговор
+                    Начать разговор о жизни
                 </button>
-                <p class="hint-text" id="welcomeHint">Выберу тему и задам правильные вопросы</p>
+                <p class="hint-text" id="welcomeHint">Я буду рядом — просто рассказывайте, как будто самому себе.</p>
             </div>
         </div>
     </div>
@@ -241,39 +234,39 @@
         </div>
 
         <div class="container">
-            <h2>О чём хотите поговорить?</h2>
-            <p class="subtitle">Выберите тему или предложите свою</p>
+            <h2>С чего начнём сегодня?</h2>
+            <p class="subtitle">Можно выбрать тему или просто сказать: «Я хочу вспомнить».</p>
 
             <div class="theme-list">
-                <button class="theme-card" onclick="selectTheme('home')">
-                    <div class="theme-icon">🏠</div>
+                <button class="theme-card" onclick="selectTheme('childhood')">
+                    <div class="theme-icon">🌞</div>
                     <div class="theme-content">
-                        <div class="theme-title">Семейный очаг</div>
-                        <div class="theme-subtitle">Дом, где всегда пахнет теплом</div>
+                        <div class="theme-title">Где начинается свет</div>
+                        <div class="theme-subtitle">Первые запахи, первые радости.</div>
                     </div>
                 </button>
 
-                <button class="theme-card" onclick="selectTheme('childhood')">
-                    <div class="theme-icon">☀️</div>
+                <button class="theme-card" onclick="selectTheme('home')">
+                    <div class="theme-icon">🏠</div>
                     <div class="theme-content">
-                        <div class="theme-title">Детство под солнцем</div>
-                        <div class="theme-subtitle">Вкус мороженого и летние каникулы</div>
+                        <div class="theme-title">Дом, который живёт в тебе</div>
+                        <div class="theme-subtitle">Места, где время оставило след.</div>
                     </div>
                 </button>
 
                 <button class="theme-card" onclick="selectTheme('family')">
-                    <div class="theme-icon">💪</div>
+                    <div class="theme-icon">🌿</div>
                     <div class="theme-content">
-                        <div class="theme-title">Сила рода</div>
-                        <div class="theme-subtitle">Истоки, что делают нас собой</div>
+                        <div class="theme-title">Линия рода</div>
+                        <div class="theme-subtitle">Голоса, что звучат в нас.</div>
                     </div>
                 </button>
 
-                <button class="theme-card" onclick="selectTheme('happiness')">
-                    <div class="theme-icon">💝</div>
+                <button class="theme-card" onclick="selectTheme('moment')">
+                    <div class="theme-icon">💫</div>
                     <div class="theme-content">
-                        <div class="theme-title">Моменты счастья</div>
-                        <div class="theme-subtitle">Смех, который звучит сквозь годы</div>
+                        <div class="theme-title">Когда время остановилось</div>
+                        <div class="theme-subtitle">Мгновения, в которых мы остаёмся.</div>
                     </div>
                 </button>
 
@@ -281,6 +274,7 @@
                     <div class="theme-icon">✏️</div>
                     <div class="theme-content">
                         <div class="theme-title">Своя тема</div>
+                        <div class="theme-subtitle">Что просится быть сказанным?</div>
                     </div>
                 </button>
             </div>
@@ -332,14 +326,15 @@
 
         <div class="container">
             <div class="result-header">
-                <h1>История готова! ✨</h1>
+                <h1>Ваше воспоминание обрело форму.</h1>
+                <p class="result-subtitle">Теперь оно может жить дольше, чем время.</p>
             </div>
 
             <div class="story-card" onclick="readFull()" style="cursor: pointer;">
                 <h2 id="storyTitle" class="story-title">📖 Рыбалка с дедом</h2>
 
                 <div class="story-preview" id="storyPreview">
-                    <p>"Каждое лето, с июля до сентября, мы с дедом ходили на рыбалку. Помню, как однажды поймал щуку больше килограмма — дед так гордился..."</p>
+                    <p>"Каждое воскресенье бабушка пекла пироги. Запах теста и корицы наполнял дом, а я знал — это значит, что мир в порядке."</p>
                 </div>
 
                 <div class="read-full-hint">👆 Нажмите, чтобы увидеть полную историю</div>
@@ -352,16 +347,11 @@
                 <span class="stat-compact">⏱️ <span id="durationCount">8</span> мин</span>
             </div>
 
-            <!-- Ссылка на управление капсулой -->
-            <div class="capsule-link-card">
-                <p class="capsule-link-text">Для полного управления капсулой времени:</p>
-                <a href="https://dmitrijburlaku.nasledie.digital/" target="_blank" class="capsule-link-button">
-                    🔗 Перейти на Nasledie.Digital
-                </a>
-            </div>
+            <p class="capsule-note">Эта история теперь часть вашей Капсулы памяти. Её можно дополнить, озвучить или подарить близким.</p>
 
             <div class="action-section">
-                <button class="primary-button" onclick="startNewStory()">🎙️ Создать новую историю</button>
+                <button class="primary-button" onclick="saveToCapsula()">🏛️ Сохранить в Капсулу</button>
+                <button class="secondary-button" onclick="continueEditing()">Продолжить размышление</button>
             </div>
         </div>
     </div>
@@ -405,44 +395,41 @@
     <div id="artifacts" class="screen">
         <div class="top-bar">
             <button class="back-button" onclick="goBack()">←</button>
-            <div class="top-logo">Артефакты</div>
+            <div class="top-logo">Артефакты памяти</div>
             <div class="spacer"></div>
         </div>
 
         <div class="container">
-            <p class="intro-text">Созданные из ваших воспоминаний</p>
+            <p class="intro-text">Из каждого воспоминания рождается не просто текст,<br>а образ — след жизни.</p>
 
             <div class="artifacts-list">
                 <div class="artifact-card primary">
-                    <div class="artifact-icon">📝</div>
-                    <h3>Записи воспоминаний</h3>
-                    <p>Все ваши необработанные записи - сырые тексты и заметки</p>
+                    <div class="artifact-icon">📖</div>
+                    <h3>Истории</h3>
+                    <p>Тексты, в которых звучит ваше прошлое.</p>
                     <div class="artifact-actions">
-                        <button class="secondary-button" onclick="viewRawMemories()">Просмотреть записи</button>
-                        <a href="https://dmitrijburlaku.nasledie.digital/storyteller" target="_blank" class="storyteller-link">
-                            ✨ Создать историю со Сказочником
-                        </a>
+                        <button class="secondary-button" onclick="viewRawMemories()">Просмотреть истории</button>
                     </div>
                 </div>
 
                 <div class="artifact-card">
-                    <div class="artifact-icon">📖</div>
-                    <h3>Книга воспоминаний</h3>
-                    <p>Все ваши истории в одном красивом издании</p>
-                    <button class="secondary-button" onclick="viewArtifact('book')">Посмотреть</button>
+                    <div class="artifact-icon">🕊️</div>
+                    <h3>Голоса</h3>
+                    <p>Сохранённые разговоры и аудиозаметки.</p>
+                    <button class="secondary-button" onclick="viewArtifact('voices')">Посмотреть</button>
                 </div>
 
                 <div class="artifact-card">
-                    <div class="artifact-icon">🌊</div>
+                    <div class="artifact-icon">🌳</div>
                     <h3>Река жизни</h3>
-                    <p>Визуальная хронология событий</p>
+                    <p>Визуальная хронология ваших смыслов.</p>
                     <button class="secondary-button" onclick="viewArtifact('timeline')">Посмотреть</button>
                 </div>
 
                 <div class="artifact-card disabled">
-                    <div class="artifact-icon">🫂</div>
-                    <h3>Круг общения</h3>
-                    <p>Люди в ваших воспоминаниях</p>
+                    <div class="artifact-icon">💠</div>
+                    <h3>Теги души</h3>
+                    <p>Темы, что проходят через вашу жизнь, как нити.</p>
                     <p class="artifact-hint">Доступно после 10 историй</p>
                 </div>
             </div>
