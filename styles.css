@@ -258,7 +258,7 @@ h3 {
     text-align: center;
     margin-bottom: calc(var(--base-unit) * 4);
     margin-top: calc(var(--base-unit) * 2);
-    color: #555;
+    color: var(--text-secondary); /* Серый для тёмной темы */
     line-height: 1.5;
 }
 
@@ -266,7 +266,7 @@ h3 {
     font-size: var(--font-body);
     text-align: center;
     margin-bottom: calc(var(--base-unit) * 3);
-    color: #666;
+    color: var(--text-secondary); /* Серый для тёмной темы */
 }
 
 /* Карточки выбора */
@@ -278,8 +278,8 @@ h3 {
 }
 
 .choice-card {
-    background: white;
-    border: none;
+    background: var(--background-white); /* Тёмно-серый фон */
+    border: 2px solid rgba(36, 242, 191, 0.2);
     border-radius: var(--border-radius-large);
     padding: calc(var(--base-unit) * 3);
     box-shadow: var(--shadow);
@@ -291,6 +291,8 @@ h3 {
 .choice-card:hover, .choice-card:active {
     box-shadow: var(--shadow-hover);
     transform: translateY(-2px);
+    border-color: var(--primary-color);
+    background: rgba(36, 242, 191, 0.05);
 }
 
 .card-icon {
@@ -307,7 +309,7 @@ h3 {
 
 .card-description {
     font-size: var(--font-body);
-    color: #666;
+    color: var(--text-secondary);
     line-height: 1.4;
 }
 
@@ -479,11 +481,12 @@ h3 {
 }
 
 .modal-content {
-    background: white;
+    background: var(--background-dark); /* Тёмный фон */
     border-radius: var(--border-radius-large);
     padding: calc(var(--base-unit) * 4);
     max-width: 500px;
     width: 100%;
+    border: 2px solid var(--primary-color);
     box-shadow: 0 8px 24px rgba(0,0,0,0.2);
     animation: slideUp 0.3s ease-out;
 }
@@ -572,7 +575,7 @@ h3 {
 
 .theme-subtitle {
     font-size: 16px;
-    color: #666;
+    color: var(--text-secondary);
 }
 
 .theme-card.custom {
@@ -582,7 +585,7 @@ h3 {
 
 /* Загрузка фото */
 .upload-area {
-    background: white;
+    background: var(--background-white);
     border: 3px dashed var(--primary-color);
     border-radius: var(--border-radius-large);
     padding: calc(var(--base-unit) * 6);
@@ -610,13 +613,13 @@ h3 {
 
 .upload-hint {
     font-size: var(--font-caption);
-    color: #666;
+    color: var(--text-secondary);
 }
 
 .info-text {
     text-align: center;
     font-size: var(--font-caption);
-    color: #888;
+    color: var(--text-secondary);
     line-height: 1.6;
 }
 
@@ -625,7 +628,7 @@ h3 {
 }
 
 .photo-preview-content {
-    background: white;
+    background: var(--background-white);
     border-radius: var(--border-radius-large);
     padding: calc(var(--base-unit) * 3);
     box-shadow: var(--shadow);
@@ -683,7 +686,7 @@ h3 {
 .progress-percent {
     text-align: center;
     font-size: var(--font-caption);
-    color: #666;
+    color: var(--text-secondary);
 }
 
 /* Чат */
@@ -708,7 +711,7 @@ h3 {
     align-items: center;
     gap: calc(var(--base-unit) * 2);
     padding: calc(var(--base-unit) * 2);
-    background: white;
+    background: var(--background-white);
     box-shadow: var(--shadow);
     flex-shrink: 0;
 }
@@ -888,7 +891,7 @@ h3 {
 
 .message-time {
     font-size: 14px;
-    color: #888;
+    color: var(--text-secondary);
     margin-top: calc(var(--base-unit) * 0.5);
 }
 
@@ -902,7 +905,7 @@ h3 {
 
 .message-hint {
     font-size: 16px;
-    color: #666;
+    color: var(--text-secondary);
     margin-top: calc(var(--base-unit) * 1);
 }
 
@@ -939,13 +942,13 @@ h3 {
 
 .chat-controls {
     padding: calc(var(--base-unit) * 2);
-    background: white;
-    border-top: 1px solid #E0E0E0;
+    background: var(--background-white);
+    border-top: 1px solid rgba(36, 242, 191, 0.2);
 }
 
 .chat-status {
     font-size: var(--font-caption);
-    color: #666;
+    color: var(--text-secondary);
     text-align: center;
     margin-bottom: calc(var(--base-unit) * 1);
 }
@@ -958,7 +961,7 @@ h3 {
 
 .action-button {
     flex: 1;
-    background: white;
+    background: var(--background-white);
     border: 2px solid var(--secondary-color);
     border-radius: var(--border-radius);
     padding: calc(var(--base-unit) * 1.5);
@@ -973,8 +976,8 @@ h3 {
 
 .chat-input-area {
     padding: calc(var(--base-unit) * 2);
-    background: white;
-    border-top: 1px solid #E0E0E0;
+    background: var(--background-white);
+    border-top: 1px solid rgba(36, 242, 191, 0.2);
     display: flex;
     align-items: center;
     gap: calc(var(--base-unit) * 1);
@@ -1063,7 +1066,7 @@ h3 {
     top: 50%;
     left: 50%;
     transform: translate(-50%, -50%);
-    background: white;
+    background: var(--background-white);
     padding: calc(var(--base-unit) * 4);
     border-radius: var(--border-radius-large);
     box-shadow: 0 8px 24px rgba(0,0,0,0.3);
@@ -1139,27 +1142,27 @@ h3 {
 
 .result-subtitle {
     font-size: 18px;
-    color: var(--secondary-color);
+    color: var(--primary-color); /* Бирюзовый для акцента */
     margin-top: calc(var(--base-unit) * 1);
     font-style: italic;
-    opacity: 0.9;
 }
 
 .capsule-note {
     text-align: center;
     font-size: 17px;
-    color: var(--text-color);
-    opacity: 0.8;
+    color: var(--text-secondary);
     line-height: 1.6;
     margin: calc(var(--base-unit) * 3) 0;
     padding: calc(var(--base-unit) * 2);
-    background: rgba(122, 155, 118, 0.05);
+    background: rgba(36, 242, 191, 0.05); /* Лёгкий бирюзовый фон */
     border-radius: var(--border-radius);
+    border: 1px solid rgba(36, 242, 191, 0.2);
 }
 
 .story-card {
-    background: white;
+    background: var(--background-white); /* Тёмно-серый фон */
     border-radius: var(--border-radius-large);
+    border: 2px solid rgba(36, 242, 191, 0.2);
     padding: calc(var(--base-unit) * 4);
     box-shadow: var(--shadow);
     margin-bottom: calc(var(--base-unit) * 3);
@@ -1194,7 +1197,7 @@ h3 {
 }
 
 .action-section {
-    background: white;
+    background: var(--background-white);
     border-radius: var(--border-radius-large);
     padding: calc(var(--base-unit) * 3);
     box-shadow: var(--shadow);
@@ -1245,7 +1248,7 @@ h3 {
 
 .checkbox-group label {
     font-size: var(--font-caption);
-    color: #666;
+    color: var(--text-secondary);
     cursor: pointer;
 }
 
@@ -1281,13 +1284,13 @@ h3 {
 .social-button {
     width: 100%;
     padding: calc(var(--base-unit) * 2);
-    border: 2px solid #E0E0E0;
+    border: 2px solid rgba(36, 242, 191, 0.2);
     border-radius: var(--border-radius);
     font-size: var(--font-body);
     font-weight: 600;
     cursor: pointer;
     margin-bottom: calc(var(--base-unit) * 2);
-    background: white;
+    background: var(--background-white);
     transition: all 0.3s ease;
 }
 
@@ -1318,7 +1321,7 @@ h3 {
 }
 
 .progress-card {
-    background: white;
+    background: var(--background-white);
     border-radius: var(--border-radius-large);
     padding: calc(var(--base-unit) * 3);
     box-shadow: var(--shadow);
@@ -1344,7 +1347,7 @@ h3 {
 
 .stat-label {
     font-size: 14px;
-    color: #666;
+    color: var(--text-secondary);
 }
 
 /* Dashboard */
@@ -1353,7 +1356,7 @@ h3 {
     align-items: center;
     gap: calc(var(--base-unit) * 2);
     padding: calc(var(--base-unit) * 2);
-    background: white;
+    background: var(--background-white);
     box-shadow: var(--shadow);
     position: sticky;
     top: 0;
@@ -1401,7 +1404,7 @@ h3 {
 .capsule-card,
 .recommendations-card,
 .memory-card {
-    background: white;
+    background: var(--background-white);
     border-radius: var(--border-radius-large);
     padding: calc(var(--base-unit) * 3);
     box-shadow: var(--shadow);
@@ -1423,7 +1426,7 @@ h3 {
 
 .progress-text {
     text-align: center;
-    color: #666;
+    color: var(--text-secondary);
     margin-bottom: calc(var(--base-unit) * 2);
 }
 
@@ -1511,7 +1514,7 @@ h3 {
 /* Библиотека */
 .header {
     padding: calc(var(--base-unit) * 2);
-    background: white;
+    background: var(--background-white);
     box-shadow: var(--shadow);
     margin-bottom: calc(var(--base-unit) * 2);
 }
@@ -1526,7 +1529,7 @@ h3 {
     flex: 1;
     padding: calc(var(--base-unit) * 2);
     font-size: var(--font-body);
-    border: 2px solid #E0E0E0;
+    border: 2px solid rgba(36, 242, 191, 0.2);
     border-radius: var(--border-radius);
     outline: none;
 }
@@ -1538,9 +1541,9 @@ h3 {
 .filter-button {
     padding: calc(var(--base-unit) * 2);
     font-size: var(--font-body);
-    border: 2px solid #E0E0E0;
+    border: 2px solid rgba(36, 242, 191, 0.2);
     border-radius: var(--border-radius);
-    background: white;
+    background: var(--background-white);
     cursor: pointer;
 }
 
@@ -1551,7 +1554,7 @@ h3 {
 }
 
 .memory-item {
-    background: white;
+    background: var(--background-white);
     border-radius: var(--border-radius-large);
     padding: calc(var(--base-unit) * 3);
     box-shadow: var(--shadow);
@@ -1582,7 +1585,7 @@ h3 {
 
 .memory-meta {
     font-size: var(--font-caption);
-    color: #666;
+    color: var(--text-secondary);
     margin-bottom: calc(var(--base-unit) * 0.5);
 }
 
@@ -1600,7 +1603,7 @@ h3 {
 
 /* Полная история - Instagram Style */
 #fullStoryPage {
-    background: white;
+    background: var(--background-white);
 }
 
 .story-page-header {
@@ -1608,7 +1611,7 @@ h3 {
     justify-content: space-between;
     align-items: center;
     padding: calc(var(--base-unit) * 2);
-    background: white;
+    background: var(--background-white);
     box-shadow: var(--shadow);
     position: sticky;
     top: 0;
@@ -1731,7 +1734,7 @@ h3 {
 }
 
 .change-photo-button:hover {
-    background: white;
+    background: var(--background-white);
     box-shadow: var(--shadow-hover);
 }
 
@@ -1763,7 +1766,7 @@ h3 {
     padding: calc(var(--base-unit) * 2);
     border-radius: var(--border-radius);
     transition: all 0.3s ease;
-    border: 2px dashed #E0E0E0;
+    border: 2px dashed rgba(36, 242, 191, 0.3);
     background: rgba(212,163,115,0.02);
     cursor: text;
 }
@@ -1824,7 +1827,7 @@ h3 {
     align-items: center;
     gap: 8px;
     padding: 12px;
-    background: white;
+    background: var(--background-white);
     border-radius: 8px;
     border: 1px solid #E1E8ED;
 }
@@ -1921,7 +1924,7 @@ h3 {
     padding: 6px 10px;
     font-size: 14px;
     color: #2C3E50;
-    background: white;
+    background: var(--background-white);
     transition: all 0.3s;
 }
 
@@ -2020,7 +2023,7 @@ h3 {
 }
 
 .btn-save-forever {
-    background: white;
+    background: var(--background-white);
     color: #667eea;
     border: none;
     padding: 16px 32px;
@@ -2133,7 +2136,7 @@ h3 {
 }
 
 .social-proof-card {
-    background: white;
+    background: var(--background-white);
     border-radius: 16px;
     padding: 24px;
     text-align: center;
@@ -2209,7 +2212,7 @@ h3 {
 
 .btn-start {
     width: 100%;
-    background: white;
+    background: var(--background-white);
     color: #667eea;
     border: none;
     padding: 18px;
@@ -2281,7 +2284,7 @@ h3 {
     left: -300px;
     width: 300px;
     height: 100%;
-    background: white;
+    background: var(--background-white);
     box-shadow: 2px 0 12px rgba(0,0,0,0.15);
     z-index: 3000;
     transition: left 0.3s ease;
@@ -2312,7 +2315,7 @@ h3 {
     justify-content: space-between;
     align-items: center;
     padding: calc(var(--base-unit) * 3);
-    border-bottom: 1px solid #E0E0E0;
+    border-bottom: 1px solid rgba(36, 242, 191, 0.2);
 }
 
 .menu-logo {
@@ -2413,7 +2416,8 @@ h3 {
 .hint-text {
     margin-top: calc(var(--base-unit) * 2);
     font-size: var(--font-caption);
-    color: #888;
+    color: var(--text-secondary);
+    text-align: center;
 }
 
 /* О проекте */
@@ -2427,7 +2431,7 @@ h3 {
 }
 
 .about-section {
-    background: white;
+    background: var(--background-white);
     border-radius: var(--border-radius-large);
     padding: calc(var(--base-unit) * 3);
     box-shadow: var(--shadow);
@@ -2442,7 +2446,7 @@ h3 {
 
 .about-section p {
     line-height: 1.6;
-    color: #555;
+    color: var(--text-secondary);
 }
 
 .external-link {
@@ -2482,7 +2486,7 @@ h3 {
 
 /* Статистика истории */
 .stats-card {
-    background: white;
+    background: var(--background-white);
     border-radius: var(--border-radius-large);
     padding: calc(var(--base-unit) * 3);
     box-shadow: var(--shadow);
@@ -2509,7 +2513,7 @@ h3 {
 
 .stat-compact {
     font-size: var(--font-caption);
-    color: #666;
+    color: var(--text-secondary);
     font-weight: 500;
 }
 
@@ -2530,7 +2534,7 @@ h3 {
 
 .capsule-link-button {
     display: inline-block;
-    background: white;
+    background: var(--background-white);
     color: var(--text-color);
     padding: calc(var(--base-unit) * 2) calc(var(--base-unit) * 4);
     border-radius: var(--border-radius);
@@ -2549,7 +2553,7 @@ h3 {
     display: flex;
     gap: calc(var(--base-unit) * 1);
     margin-bottom: calc(var(--base-unit) * 3);
-    border-bottom: 2px solid #E0E0E0;
+    border-bottom: 2px solid rgba(36, 242, 191, 0.2);
 }
 
 .media-tab {
@@ -2577,7 +2581,7 @@ h3 {
 }
 
 .media-item {
-    background: white;
+    background: var(--background-white);
     border-radius: var(--border-radius);
     padding: calc(var(--base-unit) * 2);
     box-shadow: var(--shadow);
@@ -2598,7 +2602,7 @@ h3 {
 
 .media-name {
     font-size: 14px;
-    color: #666;
+    color: var(--text-secondary);
 }
 
 /* Артефакты */
@@ -2609,20 +2613,23 @@ h3 {
 }
 
 .artifact-card {
-    background: white;
+    background: var(--background-white); /* Тёмно-серый фон */
     border-radius: var(--border-radius-large);
     padding: calc(var(--base-unit) * 3);
     box-shadow: var(--shadow);
     text-align: center;
+    border: 2px solid rgba(36, 242, 191, 0.2);
+    margin-bottom: calc(var(--base-unit) * 2);
 }
 
 .artifact-card.primary {
-    background: linear-gradient(135deg, rgba(212,163,115,0.1), rgba(143,185,150,0.1));
+    background: rgba(36, 242, 191, 0.05); /* Лёгкий бирюзовый фон */
     border: 2px solid var(--primary-color);
 }
 
 .artifact-card.disabled {
-    opacity: 0.6;
+    opacity: 0.5;
+    border-color: rgba(36, 242, 191, 0.1);
 }
 
 .artifact-icon {
@@ -2636,7 +2643,7 @@ h3 {
 }
 
 .artifact-card p {
-    color: #666;
+    color: var(--text-secondary);
     margin-bottom: calc(var(--base-unit) * 2);
 }
 
@@ -2685,7 +2692,7 @@ h3 {
 }
 
 .categories-progress {
-    background: white;
+    background: var(--background-white);
     border-radius: var(--border-radius-large);
     padding: calc(var(--base-unit) * 3);
     box-shadow: var(--shadow);
@@ -2725,7 +2732,7 @@ h3 {
 
 .category-details {
     font-size: 14px;
-    color: #666;
+    color: var(--text-secondary);
 }
 
 .external-link-button {
@@ -2754,7 +2761,7 @@ h3 {
 }
 
 .chat-list-item {
-    background: white;
+    background: var(--background-white);
     border-radius: var(--border-radius-large);
     padding: calc(var(--base-unit) * 2);
     box-shadow: var(--shadow);
@@ -2809,7 +2816,7 @@ h3 {
 
 .chat-preview {
     font-size: 14px;
-    color: #666;
+    color: var(--text-secondary);
     margin-bottom: calc(var(--base-unit) * 0.5);
 }
 
@@ -2834,7 +2841,7 @@ h3 {
 .account-profile {
     text-align: center;
     padding: calc(var(--base-unit) * 4) 0;
-    border-bottom: 1px solid #E0E0E0;
+    border-bottom: 1px solid rgba(36, 242, 191, 0.2);
     margin-bottom: calc(var(--base-unit) * 3);
 }
 
@@ -2850,7 +2857,7 @@ h3 {
 
 .account-email {
     font-size: var(--font-caption);
-    color: #666;
+    color: var(--text-secondary);
 }
 
 .account-sections {
@@ -2865,8 +2872,8 @@ h3 {
     align-items: center;
     gap: calc(var(--base-unit) * 2);
     padding: calc(var(--base-unit) * 2);
-    background: white;
-    border: 1px solid #E0E0E0;
+    background: var(--background-white);
+    border: 1px solid rgba(36, 242, 191, 0.2);
     border-radius: var(--border-radius);
     font-size: var(--font-body);
     text-decoration: none;
