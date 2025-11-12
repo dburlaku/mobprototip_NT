@@ -12,6 +12,9 @@ import sys
 from pathlib import Path
 import threading
 import json
+from datetime import datetime
+import subprocess
+import platform
 
 # Проверка и импорт необходимых библиотек
 try:
@@ -208,7 +211,34 @@ class AuditProcessorApp:
             fg="#00ff00",
             insertbackground="white"
         )
-        self.log_text.pack(fill=tk.BOTH, expand=True)
+        self.log_text.pack(fill=tk.BOTH, expand=True, pady=(0, 10))
+
+        # Кнопки управления логами и файлом
+        log_buttons_frame = tk.Frame(log_frame, bg="white")
+        log_buttons_frame.pack(fill=tk.X)
+
+        ttk.Button(
+            log_buttons_frame,
+            text="📋 Копировать логи",
+            command=self.copy_logs,
+            width=20
+        ).pack(side=tk.LEFT, padx=5)
+
+        ttk.Button(
+            log_buttons_frame,
+            text="🗑️ Очистить логи",
+            command=self.clear_logs,
+            width=20
+        ).pack(side=tk.LEFT, padx=5)
+
+        self.open_file_btn = ttk.Button(
+            log_buttons_frame,
+            text="📂 Открыть готовый файл",
+            command=self.open_result_file,
+            width=25,
+            state=tk.DISABLED
+        )
+        self.open_file_btn.pack(side=tk.LEFT, padx=5)
 
         # Приветственное сообщение
         self.log("=" * 70)
@@ -225,12 +255,50 @@ class AuditProcessorApp:
         # Хранение выбранных файлов
         self.selected_files = []
         self.excel_file = None
+        self.last_created_file = None  # Последний созданный файл
 
     def log(self, message):
         """Добавить сообщение в лог"""
         self.log_text.insert(tk.END, message + "\n")
         self.log_text.see(tk.END)
         self.log_text.update()
+
+    def copy_logs(self):
+        """Копировать логи в буфер обмена"""
+        logs = self.log_text.get("1.0", tk.END)
+        self.root.clipboard_clear()
+        self.root.clipboard_append(logs)
+        self.root.update()
+        messagebox.showinfo("Успех", "✅ Логи скопированы в буфер обмена!")
+        self.log("📋 Логи скопированы в буфер обмена")
+
+    def clear_logs(self):
+        """Очистить логи"""
+        result = messagebox.askyesno("Подтверждение", "Очистить все логи?")
+        if result:
+            self.log_text.delete("1.0", tk.END)
+            self.log("🔍 Audit Processor v1.0")
+            self.log("Логи очищены")
+
+    def open_result_file(self):
+        """Открыть готовый Excel файл"""
+        if not self.last_created_file or not os.path.exists(self.last_created_file):
+            messagebox.showerror("Ошибка", "Файл не найден!")
+            return
+
+        try:
+            # Открыть файл в системном приложении
+            if platform.system() == 'Windows':
+                os.startfile(self.last_created_file)
+            elif platform.system() == 'Darwin':  # macOS
+                subprocess.run(['open', self.last_created_file])
+            else:  # Linux
+                subprocess.run(['xdg-open', self.last_created_file])
+
+            self.log(f"📂 Открыт файл: {os.path.basename(self.last_created_file)}")
+        except Exception as e:
+            messagebox.showerror("Ошибка", f"Не удалось открыть файл:\n{e}")
+            self.log(f"❌ Ошибка открытия файла: {e}")
 
     def recheck_ollama(self):
         """Повторная проверка Ollama"""
@@ -351,8 +419,15 @@ class AuditProcessorApp:
         self.log("🚀 НАЧАЛО ОБРАБОТКИ")
         self.log("=" * 70)
 
-        # Создание Excel файла
-        self.log(f"📊 Создание Excel файла: {os.path.basename(self.excel_file)}")
+        # Создание нового файла с timestamp (не перезаписываем шаблон)
+        timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+        base_dir = os.path.dirname(self.excel_file)
+        base_name = os.path.splitext(os.path.basename(self.excel_file))[0]
+        new_filename = f"{base_name}_{timestamp}.xlsx"
+        output_file = os.path.join(base_dir, new_filename)
+
+        self.log(f"📊 Создание Excel файла: {new_filename}")
+        self.log(f"📁 Путь: {output_file}")
 
         try:
             wb = Workbook()
@@ -395,16 +470,21 @@ class AuditProcessorApp:
                 self.log(f"✅ Обработано: {os.path.basename(file_path)}")
 
             # Сохранение Excel
-            wb.save(self.excel_file)
-            self.log(f"\n💾 Excel файл сохранен: {self.excel_file}")
+            wb.save(output_file)
+            self.last_created_file = output_file
+            self.log(f"\n💾 Excel файл сохранен: {output_file}")
 
             self.log("\n" + "=" * 70)
             self.log("✅ ОБРАБОТКА ЗАВЕРШЕНА УСПЕШНО!")
             self.log("=" * 70)
+            self.log(f"📂 Файл доступен по ссылке: {output_file}")
+
+            # Активировать кнопку открытия файла
+            self.open_file_btn.config(state=tk.NORMAL)
 
             messagebox.showinfo(
                 "Успех",
-                f"✅ Обработка завершена!\n\nОбработано файлов: {len(self.selected_files)}\nРезультат: {os.path.basename(self.excel_file)}"
+                f"✅ Обработка завершена!\n\nОбработано файлов: {len(self.selected_files)}\nРезультат: {new_filename}\n\nНажмите '📂 Открыть готовый файл' для просмотра"
             )
 
         except Exception as e:
@@ -459,20 +539,49 @@ class AuditProcessorApp:
         elif file_ext in ['.jpg', '.jpeg', '.png', '.bmp']:
             try:
                 import easyocr
+                import numpy as np
+                from PIL import Image
+
                 self.log("   🔍 Запуск OCR распознавания...")
+
+                # Проверка существования файла
+                if not os.path.exists(file_path):
+                    self.log(f"   ❌ Файл не найден: {file_path}")
+                    return "Ошибка: файл не найден"
+
+                # Попытка открыть изображение через PIL (работает с кириллицей)
+                try:
+                    img = Image.open(file_path)
+                    img_array = np.array(img)
+                    self.log(f"   📷 Изображение загружено: {img.size[0]}x{img.size[1]} пикселей")
+                except Exception as img_err:
+                    self.log(f"   ❌ Не удалось открыть изображение: {img_err}")
+                    return f"Ошибка: не удалось открыть изображение - {img_err}"
+
                 self.log("   ⏳ Загрузка модели EasyOCR (первый запуск может занять время)...")
-                reader = easyocr.Reader(['ru', 'en'], gpu=False)
-                result = reader.readtext(file_path, detail=0)
+                reader = easyocr.Reader(['ru', 'en'], gpu=False, verbose=False)
+
+                # Используем массив numpy вместо пути к файлу
+                result = reader.readtext(img_array, detail=0)
                 text = "\n".join(result)
-                self.log(f"   📝 Распознано {len(text)} символов")
+
+                if text.strip():
+                    self.log(f"   📝 Распознано {len(text)} символов")
+                else:
+                    self.log("   ⚠️ Текст не распознан (пустое изображение или нет текста)")
+                    text = "(Текст не обнаружен на изображении)"
+
                 return text
+
             except ImportError as ie:
-                self.log("   ⚠️ EasyOCR не установлен")
+                self.log("   ⚠️ EasyOCR или зависимости не установлены")
                 self.log(f"   Детали: {ie}")
-                self.log("   Установите: pip install easyocr")
-                return "⚠️ OCR недоступен: EasyOCR не установлен\nУстановите: pip install easyocr"
+                self.log("   Установите: pip install easyocr pillow")
+                return "⚠️ OCR недоступен: установите easyocr и pillow"
             except Exception as e:
                 self.log(f"   ❌ Ошибка OCR: {e}")
+                import traceback
+                self.log(f"   Подробности: {traceback.format_exc()}")
                 return f"Ошибка OCR: {e}"
 
         return "Неподдерживаемый формат файла"
