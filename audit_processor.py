@@ -43,7 +43,7 @@ class AuditProcessorApp:
 
         # Проверка Ollama при запуске
         self.ollama_available = self.check_ollama()
-        self.model_name = "qwen2.5:latest"
+        self.model_name = "llama3.2:latest"
 
         self.setup_ui()
 

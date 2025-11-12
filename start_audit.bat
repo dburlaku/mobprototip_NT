@@ -18,27 +18,27 @@ if %errorlevel% neq 0 (
 )
 
 echo.
-echo [2/3] Checking model qwen2.5...
-ollama list | findstr qwen2.5 >nul 2>&1
+echo [2/3] Checking model llama3.2...
+ollama list | findstr llama3.2 >nul 2>&1
 if %errorlevel% neq 0 (
-    echo Model qwen2.5 not found. Downloading...
-    echo This may take 5-10 minutes (~5GB download)
+    echo Model llama3.2 not found. Downloading...
+    echo This may take 3-5 minutes (~2GB download)
     echo Please wait...
-    ollama pull qwen2.5:latest
+    ollama pull llama3.2:latest
     if %errorlevel% neq 0 (
         echo.
-        echo WARNING: Failed to download model qwen2.5
+        echo WARNING: Failed to download model llama3.2
         echo You can try alternative models:
-        echo   - ollama pull llama3.2:latest
+        echo   - ollama pull qwen2.5:latest
         echo   - ollama pull mistral:latest
         echo.
         echo The application will start in DEMO mode without AI analysis.
         timeout /t 5 /nobreak
     ) else (
-        echo Model qwen2.5 downloaded successfully!
+        echo Model llama3.2 downloaded successfully!
     )
 ) else (
-    echo Model qwen2.5 found.
+    echo Model llama3.2 found.
 )
 
 echo.
