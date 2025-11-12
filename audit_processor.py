@@ -460,17 +460,20 @@ class AuditProcessorApp:
             try:
                 import easyocr
                 self.log("   🔍 Запуск OCR распознавания...")
+                self.log("   ⏳ Загрузка модели EasyOCR (первый запуск может занять время)...")
                 reader = easyocr.Reader(['ru', 'en'], gpu=False)
                 result = reader.readtext(file_path, detail=0)
                 text = "\n".join(result)
                 self.log(f"   📝 Распознано {len(text)} символов")
                 return text
-            except ImportError:
+            except ImportError as ie:
                 self.log("   ⚠️ EasyOCR не установлен")
-                return "Ошибка: установите easyocr"
+                self.log(f"   Детали: {ie}")
+                self.log("   Установите: pip install easyocr")
+                return "⚠️ OCR недоступен: EasyOCR не установлен\nУстановите: pip install easyocr"
             except Exception as e:
                 self.log(f"   ❌ Ошибка OCR: {e}")
-                return f"Ошибка: {e}"
+                return f"Ошибка OCR: {e}"
 
         return "Неподдерживаемый формат файла"
 
