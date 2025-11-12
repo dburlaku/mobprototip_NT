@@ -145,10 +145,10 @@ class AuditProcessorApp:
         )
         self.files_listbox.pack(fill=tk.BOTH, expand=True, pady=(10, 0))
 
-        # Секция вывода Excel
+        # Секция шаблона Excel
         excel_frame = tk.LabelFrame(
             main_container,
-            text="📊 Выходной файл Excel",
+            text="📊 Шаблон Excel для заполнения",
             font=("Arial", 12, "bold"),
             bg="white",
             padx=15,
@@ -163,7 +163,7 @@ class AuditProcessorApp:
 
         ttk.Button(
             excel_btn_frame,
-            text="📁 Выбрать/создать Excel файл",
+            text="📁 Выбрать шаблон Excel",
             command=self.select_excel,
             width=30
         ).pack(side=tk.LEFT, padx=5)
@@ -356,17 +356,38 @@ class AuditProcessorApp:
             self.log(f"✅ Добавлено изображений: {len(files)}")
 
     def select_excel(self):
-        """Выбор/создание Excel файла"""
-        file = filedialog.asksaveasfilename(
-            title="Выберите или создайте Excel файл",
+        """Выбор шаблона Excel файла"""
+        file = filedialog.askopenfilename(
+            title="Выберите шаблон Excel для заполнения",
             defaultextension=".xlsx",
             filetypes=[("Excel файлы", "*.xlsx"), ("Все файлы", "*.*")]
         )
 
         if file:
-            self.excel_file = file
-            self.excel_path_var.set(os.path.basename(file))
-            self.log(f"✅ Выбран Excel файл: {os.path.basename(file)}")
+            # Проверяем, что файл существует и можно прочитать
+            try:
+                wb = load_workbook(file)
+                ws = wb.active
+
+                # Читаем заголовки из первой строки
+                headers = []
+                for cell in ws[1]:
+                    if cell.value:
+                        headers.append(str(cell.value))
+
+                if not headers:
+                    messagebox.showerror("Ошибка", "В шаблоне не найдены заголовки в первой строке!")
+                    return
+
+                self.excel_file = file
+                self.excel_path_var.set(os.path.basename(file))
+                self.log(f"✅ Выбран шаблон Excel: {os.path.basename(file)}")
+                self.log(f"   Найдено колонок: {len(headers)}")
+                self.log(f"   Заголовки: {', '.join(headers[:5])}{'...' if len(headers) > 5 else ''}")
+
+            except Exception as e:
+                messagebox.showerror("Ошибка", f"Не удалось открыть шаблон:\n{e}")
+                self.log(f"❌ Ошибка чтения шаблона: {e}")
 
     def query_ollama(self, prompt, context=""):
         """Запрос к Ollama API"""
@@ -413,7 +434,7 @@ class AuditProcessorApp:
         thread.start()
 
     def process_files(self):
-        """Обработка файлов"""
+        """Обработка файлов с умным размещением в шаблоне"""
 
         self.log("\n" + "=" * 70)
         self.log("🚀 НАЧАЛО ОБРАБОТКИ")
@@ -423,73 +444,204 @@ class AuditProcessorApp:
         timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
         base_dir = os.path.dirname(self.excel_file)
         base_name = os.path.splitext(os.path.basename(self.excel_file))[0]
-        new_filename = f"{base_name}_{timestamp}.xlsx"
+        new_filename = f"{base_name}_заполнен_{timestamp}.xlsx"
         output_file = os.path.join(base_dir, new_filename)
 
-        self.log(f"📊 Создание Excel файла: {new_filename}")
-        self.log(f"📁 Путь: {output_file}")
+        self.log(f"📊 Загрузка шаблона: {os.path.basename(self.excel_file)}")
 
         try:
-            wb = Workbook()
+            # Загрузка шаблона (сохраняя форматирование)
+            wb = load_workbook(self.excel_file)
             ws = wb.active
-            ws.title = "Аудит"
 
-            # Заголовки
-            headers = ["№", "Файл", "Тип", "Извлеченный текст", "Анализ", "Примечания"]
-            for col, header in enumerate(headers, start=1):
-                ws.cell(row=1, column=col, value=header)
+            # Анализ структуры шаблона
+            self.log("🔍 Анализ структуры шаблона...")
+            headers = []
+            header_positions = {}  # {имя колонки: индекс колонки}
 
-            row = 2
+            for idx, cell in enumerate(ws[1], start=1):
+                if cell.value:
+                    header_name = str(cell.value).strip()
+                    headers.append(header_name)
+                    header_positions[header_name] = idx
+                    self.log(f"   Колонка {idx}: {header_name}")
 
+            if not headers:
+                raise Exception("В шаблоне не найдены заголовки!")
+
+            self.log(f"✅ Найдено {len(headers)} колонок")
+
+            # Добавляем колонку для объяснений если её нет
+            explanation_col = None
+            for col_name in ["Объяснение размещения", "Пояснения", "Комментарии AI"]:
+                if col_name in header_positions:
+                    explanation_col = header_positions[col_name]
+                    break
+
+            if not explanation_col:
+                explanation_col = len(headers) + 1
+                ws.cell(row=1, column=explanation_col, value="Объяснение AI")
+                self.log(f"   Добавлена колонка 'Объяснение AI' (позиция {explanation_col})")
+
+            # Определяем следующую пустую строку
+            next_row = ws.max_row + 1
+
+            # Обработка каждого файла
             for idx, file_path in enumerate(self.selected_files, start=1):
                 self.log(f"\n📄 [{idx}/{len(self.selected_files)}] Обработка: {os.path.basename(file_path)}")
 
                 file_ext = os.path.splitext(file_path)[1].lower()
-                file_type = self.get_file_type(file_ext)
 
                 # Извлечение текста
                 text = self.extract_text(file_path, file_ext)
 
-                # Анализ через Ollama
-                analysis = ""
-                if self.ollama_available and text:
-                    self.log("🤖 Анализ через нейросеть...")
-                    analysis = self.analyze_document(text)
+                if not text or len(text.strip()) < 10:
+                    self.log("   ⚠️ Извлечено недостаточно текста, пропускаем")
+                    continue
+
+                # AI-анализ и размещение данных
+                if self.ollama_available:
+                    self.log("🤖 Анализ и умное размещение через AI...")
+                    mapping = self.smart_data_mapping(text, headers, file_path)
+
+                    # Размещаем данные в соответствующие колонки
+                    current_row = next_row
+                    for column_name, value in mapping["data"].items():
+                        if column_name in header_positions:
+                            col_idx = header_positions[column_name]
+                            ws.cell(row=current_row, column=col_idx, value=value)
+                            self.log(f"   ✓ '{column_name}': {value[:50]}{'...' if len(str(value)) > 50 else ''}")
+
+                    # Добавляем объяснение
+                    ws.cell(row=current_row, column=explanation_col, value=mapping["explanation"])
+
+                    next_row += 1
+                    self.log(f"✅ Данные размещены в строке {current_row}")
                 else:
-                    analysis = "Демо-режим: анализ недоступен"
+                    # Демо-режим без AI
+                    self.log("⚠️ Демо-режим: размещение базовых данных")
+                    current_row = next_row
 
-                # Запись в Excel
-                ws.cell(row=row, column=1, value=idx)
-                ws.cell(row=row, column=2, value=os.path.basename(file_path))
-                ws.cell(row=row, column=3, value=file_type)
-                ws.cell(row=row, column=4, value=text[:500] + "..." if len(text) > 500 else text)
-                ws.cell(row=row, column=5, value=analysis)
-                ws.cell(row=row, column=6, value="")
+                    # Пытаемся разместить в первые доступные колонки
+                    if len(headers) > 0:
+                        ws.cell(row=current_row, column=1, value=os.path.basename(file_path))
+                    if len(headers) > 1:
+                        ws.cell(row=current_row, column=2, value=text[:200])
 
-                row += 1
-                self.log(f"✅ Обработано: {os.path.basename(file_path)}")
+                    ws.cell(row=current_row, column=explanation_col,
+                           value="Демо-режим: AI недоступен, данные размещены автоматически")
 
-            # Сохранение Excel
+                    next_row += 1
+
+            # Сохранение файла
+            self.log(f"\n💾 Сохранение результата: {new_filename}")
             wb.save(output_file)
             self.last_created_file = output_file
-            self.log(f"\n💾 Excel файл сохранен: {output_file}")
 
             self.log("\n" + "=" * 70)
             self.log("✅ ОБРАБОТКА ЗАВЕРШЕНА УСПЕШНО!")
             self.log("=" * 70)
-            self.log(f"📂 Файл доступен по ссылке: {output_file}")
+            self.log(f"📂 Файл доступен: {output_file}")
+            self.log(f"📝 Обработано файлов: {len(self.selected_files)}")
+            self.log(f"📊 Заполнено строк: {next_row - ws.max_row - 1}")
 
             # Активировать кнопку открытия файла
             self.open_file_btn.config(state=tk.NORMAL)
 
             messagebox.showinfo(
                 "Успех",
-                f"✅ Обработка завершена!\n\nОбработано файлов: {len(self.selected_files)}\nРезультат: {new_filename}\n\nНажмите '📂 Открыть готовый файл' для просмотра"
+                f"✅ Обработка завершена!\n\nОбработано файлов: {len(self.selected_files)}\nРезультат: {new_filename}\n\nФорматирование шаблона сохранено.\nДанные размещены с помощью AI.\n\nНажмите '📂 Открыть готовый файл'"
             )
 
         except Exception as e:
             self.log(f"\n❌ ОШИБКА: {e}")
+            import traceback
+            self.log(f"   Подробности: {traceback.format_exc()}")
             messagebox.showerror("Ошибка", f"Произошла ошибка:\n{e}")
+
+    def smart_data_mapping(self, extracted_text, template_headers, file_path):
+        """
+        Использует AI для умного размещения данных в колонки шаблона
+
+        Returns:
+            dict: {"data": {column_name: value}, "explanation": "..."}
+        """
+        self.log("   🧠 Запрос к AI для анализа структуры...")
+
+        # Формируем промпт для AI
+        prompt = f"""Ты - ассистент для заполнения таблиц аудита.
+
+ЗАДАЧА: Проанализируй извлеченный текст из документа и размести информацию в соответствующие колонки таблицы.
+
+СТРУКТУРА ТАБЛИЦЫ (колонки):
+{', '.join(template_headers)}
+
+ИЗВЛЕЧЕННЫЙ ТЕКСТ:
+{extracted_text[:3000]}
+
+ИНСТРУКЦИЯ:
+1. Проанализируй текст и определи, какая информация относится к какой колонке
+2. Извлеки релевантные данные для каждой колонки
+3. Если для колонки нет данных, пропусти её
+4. Верни результат СТРОГО в JSON формате:
+
+{{
+  "data": {{
+    "Имя колонки 1": "значение",
+    "Имя колонки 2": "значение",
+    ...
+  }},
+  "explanation": "Краткое объяснение, почему данные размещены именно так (2-3 предложения)"
+}}
+
+ВАЖНО:
+- Используй ТОЧНЫЕ названия колонок из списка выше
+- Значения должны быть краткими и по существу
+- Файл: {os.path.basename(file_path)}
+
+JSON:"""
+
+        try:
+            response = self.query_ollama(prompt)
+
+            # Попытка распарсить JSON из ответа
+            import re
+            json_match = re.search(r'\{[\s\S]*\}', response)
+
+            if json_match:
+                result = json.loads(json_match.group(0))
+                self.log(f"   ✓ AI определил размещение для {len(result.get('data', {}))} колонок")
+                return result
+            else:
+                self.log("   ⚠️ AI не вернул JSON, используем базовый режим")
+                return self.fallback_mapping(extracted_text, template_headers, file_path)
+
+        except Exception as e:
+            self.log(f"   ⚠️ Ошибка AI-анализа: {e}")
+            return self.fallback_mapping(extracted_text, template_headers, file_path)
+
+    def fallback_mapping(self, text, headers, file_path):
+        """Базовое размещение данных при недоступности AI"""
+        mapping = {"data": {}, "explanation": "Автоматическое размещение (AI недоступен)"}
+
+        # Пытаемся разместить данные в первые подходящие колонки
+        common_fields = {
+            "Файл": os.path.basename(file_path),
+            "Документ": os.path.basename(file_path),
+            "Название": os.path.basename(file_path),
+            "Описание": text[:200],
+            "Текст": text[:500],
+            "Содержание": text[:500],
+            "Извлеченный текст": text[:1000],
+        }
+
+        for header in headers:
+            for field_name, value in common_fields.items():
+                if field_name.lower() in header.lower():
+                    mapping["data"][header] = value
+                    break
+
+        return mapping
 
     def get_file_type(self, ext):
         """Определить тип файла"""
@@ -586,26 +738,6 @@ class AuditProcessorApp:
 
         return "Неподдерживаемый формат файла"
 
-    def analyze_document(self, text):
-        """Анализ документа через Ollama"""
-
-        if not text or len(text.strip()) < 10:
-            return "Текст слишком короткий для анализа"
-
-        prompt = f"""Проанализируй следующий документ аудита и выдели ключевые моменты:
-
-{text[:2000]}
-
-Предоставь краткий анализ:
-1. Основная тема документа
-2. Ключевые даты и цифры
-3. Важные выводы
-4. Рекомендации (если есть)
-
-Ответ дай кратко, до 200 слов."""
-
-        response = self.query_ollama(prompt)
-        return response if response else "Ошибка анализа"
 
 
 def main():
