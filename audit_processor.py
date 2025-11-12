@@ -487,8 +487,160 @@ class AuditProcessorApp:
         thread = threading.Thread(target=self.process_files, daemon=True)
         thread.start()
 
+    def read_existing_table_content(self, ws, header_row_num, headers, header_positions):
+        """
+        Читает все существующие строки таблицы с их содержимым
+
+        Returns:
+            dict: {row_number: {column_name: value, ...}, ...}
+        """
+        self.log("📖 Чтение существующего содержимого таблицы...")
+        table_rows = {}
+
+        for row_idx in range(header_row_num + 1, ws.max_row + 1):
+            row_data = {}
+            has_content = False
+
+            for col_name, col_idx in header_positions.items():
+                cell_value = ws.cell(row=row_idx, column=col_idx).value
+                if cell_value and str(cell_value).strip():
+                    row_data[col_name] = str(cell_value).strip()
+                    has_content = True
+
+            if has_content:
+                table_rows[row_idx] = row_data
+
+        self.log(f"   ✓ Найдено строк с данными: {len(table_rows)}")
+
+        # Показываем примеры строк
+        sample_count = min(5, len(table_rows))
+        if sample_count > 0:
+            self.log(f"   Примеры первых {sample_count} строк:")
+            for i, (row_num, row_data) in enumerate(list(table_rows.items())[:sample_count]):
+                # Показываем только первые 2 колонки для краткости
+                cols_preview = list(row_data.items())[:2]
+                preview = " | ".join([f"{k}: {v[:30]}..." if len(v) > 30 else f"{k}: {v}"
+                                     for k, v in cols_preview])
+                self.log(f"     Строка {row_num}: {preview}")
+
+        return table_rows
+
+    def match_text_to_rows(self, extracted_text, table_rows, file_path, headers):
+        """
+        Использует AI для определения, в какую строку таблицы нужно вставить извлеченный текст
+
+        Args:
+            extracted_text: Текст, извлеченный из документа/изображения
+            table_rows: Словарь существующих строк таблицы {row_num: {col: value}}
+            file_path: Путь к обрабатываемому файлу
+            headers: Список заголовков таблицы
+
+        Returns:
+            dict: {
+                "matched_rows": [row_numbers],
+                "data_to_insert": {column_name: value},
+                "explanation": "..."
+            }
+        """
+        self.log("   🧠 AI анализирует соответствие текста строкам таблицы...")
+
+        # Формируем описание существующих строк для AI
+        rows_description = []
+        for row_num, row_data in list(table_rows.items())[:50]:  # Ограничим первыми 50 строками
+            # Объединяем все данные строки в одну строку
+            row_text = " | ".join([f"{col}: {val}" for col, val in row_data.items()])
+            rows_description.append(f"Строка {row_num}: {row_text[:200]}")
+
+        rows_text = "\n".join(rows_description)
+        headers_list = ", ".join([f'"{h}"' for h in headers])
+
+        prompt = f"""Ты - ассистент для заполнения таблиц аудита.
+
+ЗАДАЧА: Проанализируй извлеченный текст и определи, в какую строку таблицы он относится по смыслу.
+
+СТРУКТУРА ТАБЛИЦЫ:
+Заголовки: {headers_list}
+
+СУЩЕСТВУЮЩИЕ СТРОКИ ТАБЛИЦЫ:
+{rows_text[:3000]}
+
+ИЗВЛЕЧЕННЫЙ ТЕКСТ (из файла "{os.path.basename(file_path)}"):
+---
+{extracted_text[:2500]}
+---
+
+ИНСТРУКЦИИ:
+1. Проанализируй содержимое каждой строки таблицы
+2. Определи, к какой строке (или строкам) относится извлеченный текст по смыслу
+3. Определи, в какую колонку нужно вставить этот текст (обычно это колонка для доказательств/комментариев/информации)
+4. Сформируй краткое описание извлеченной информации для вставки
+5. Верни ТОЛЬКО JSON, БЕЗ дополнительного текста
+
+ФОРМАТ ОТВЕТА (верни ТОЛЬКО это):
+{{
+  "matched_rows": [13, 82],
+  "target_column": "Точное название колонки для вставки",
+  "extracted_data": "Краткое описание извлеченной информации",
+  "explanation": "Почему текст относится к этим строкам (1-2 предложения)"
+}}
+
+ВАЖНО:
+- matched_rows должен содержать номера строк из списка выше
+- target_column должно быть точным названием колонки из заголовков
+- Если текст не относится ни к одной строке, верни matched_rows: []
+"""
+
+        try:
+            response = self.query_ollama(prompt)
+
+            if not response or len(response.strip()) < 10:
+                self.log("   ⚠️ AI вернул пустой ответ")
+                return None
+
+            # Логируем начало ответа
+            self.log(f"   AI ответ (начало): {response[:200]}...")
+
+            # Парсим JSON из ответа
+            import re
+            json_match = re.search(r'\{[\s\S]*?"matched_rows"[\s\S]*?\}', response)
+
+            if not json_match:
+                json_match = re.search(r'\{[^{}]*(?:\{[^{}]*\}[^{}]*)*\}', response)
+
+            if json_match:
+                try:
+                    json_str = json_match.group(0)
+                    result = json.loads(json_str)
+
+                    if "matched_rows" in result:
+                        matched_count = len(result.get('matched_rows', []))
+                        self.log(f"   ✓ AI определил соответствие с {matched_count} строками")
+
+                        if matched_count > 0:
+                            rows_list = result['matched_rows']
+                            self.log(f"     Строки: {rows_list}")
+                            self.log(f"     Целевая колонка: {result.get('target_column', 'не указана')}")
+
+                        return result
+                    else:
+                        self.log("   ⚠️ JSON не содержит поле 'matched_rows'")
+                        return None
+
+                except json.JSONDecodeError as je:
+                    self.log(f"   ⚠️ Ошибка парсинга JSON: {je}")
+                    return None
+            else:
+                self.log("   ⚠️ JSON не найден в ответе AI")
+                return None
+
+        except Exception as e:
+            self.log(f"   ⚠️ Ошибка AI-анализа: {e}")
+            import traceback
+            self.log(f"   Трейсбек: {traceback.format_exc()[:300]}")
+            return None
+
     def process_files(self):
-        """Обработка файлов с умным размещением в шаблоне"""
+        """Обработка файлов с анализом существующей таблицы и умным размещением данных"""
 
         self.log("\n" + "=" * 70)
         self.log("🚀 НАЧАЛО ОБРАБОТКИ")
@@ -529,6 +681,13 @@ class AuditProcessorApp:
 
             self.log(f"✅ Найдено {len(headers)} колонок")
 
+            # Читаем существующее содержимое таблицы
+            table_rows = self.read_existing_table_content(ws, header_row_num, headers, header_positions)
+
+            if not table_rows:
+                self.log("⚠️ ВНИМАНИЕ: В таблице нет существующих данных!")
+                self.log("   Программа будет добавлять новые строки.")
+
             # Добавляем колонку для объяснений если её нет
             explanation_col = None
             for col_name in ["Объяснение размещения", "Пояснения", "Комментарии AI", "Объяснение AI"]:
@@ -538,29 +697,16 @@ class AuditProcessorApp:
                     break
 
             if not explanation_col:
-                explanation_col = len(headers) + 1
+                explanation_col = ws.max_column + 1
                 # Добавляем в строку заголовков
                 ws.cell(row=header_row_num, column=explanation_col, value="Объяснение AI")
+                header_positions["Объяснение AI"] = explanation_col
                 self.log(f"   Добавлена колонка 'Объяснение AI' (позиция {explanation_col})")
 
-            # Определяем следующую пустую строку (после заголовков и существующих данных)
-            # Ищем первую полностью пустую строку после заголовков
-            next_row = header_row_num + 1
-            start_row = next_row  # Запоминаем начальную строку для подсчета
-
-            for row_idx in range(header_row_num + 1, ws.max_row + 2):
-                # Проверяем, есть ли данные в строке
-                has_data = False
-                for col_idx in range(1, len(headers) + 1):
-                    if ws.cell(row=row_idx, column=col_idx).value:
-                        has_data = True
-                        break
-
-                if not has_data:
-                    next_row = row_idx
-                    break
-
-            self.log(f"   Начало заполнения с строки: {next_row}")
+            # Счетчики для статистики
+            matched_count = 0
+            not_matched_count = 0
+            updated_rows = []
 
             # Обработка каждого файла
             for idx, file_path in enumerate(self.selected_files, start=1):
@@ -575,39 +721,48 @@ class AuditProcessorApp:
                     self.log("   ⚠️ Извлечено недостаточно текста, пропускаем")
                     continue
 
-                # AI-анализ и размещение данных
-                if self.ollama_available:
-                    self.log("🤖 Анализ и умное размещение через AI...")
-                    mapping = self.smart_data_mapping(text, headers, file_path)
+                # AI-анализ и сопоставление с существующими строками
+                if self.ollama_available and table_rows:
+                    match_result = self.match_text_to_rows(text, table_rows, file_path, headers)
 
-                    # Размещаем данные в соответствующие колонки
-                    current_row = next_row
-                    for column_name, value in mapping["data"].items():
-                        if column_name in header_positions:
-                            col_idx = header_positions[column_name]
-                            ws.cell(row=current_row, column=col_idx, value=value)
-                            self.log(f"   ✓ '{column_name}': {value[:50]}{'...' if len(str(value)) > 50 else ''}")
+                    if match_result and match_result.get("matched_rows"):
+                        # Нашли соответствие - вставляем в найденные строки
+                        matched_rows = match_result["matched_rows"]
+                        target_column = match_result.get("target_column", "")
+                        extracted_data = match_result.get("extracted_data", text[:500])
+                        explanation = match_result.get("explanation", "AI определил соответствие")
 
-                    # Добавляем объяснение
-                    ws.cell(row=current_row, column=explanation_col, value=mapping["explanation"])
+                        for row_num in matched_rows:
+                            if row_num in table_rows:
+                                # Вставляем извлеченные данные в целевую колонку
+                                if target_column and target_column in header_positions:
+                                    col_idx = header_positions[target_column]
+                                    # Добавляем к существующим данным (не перезаписываем)
+                                    existing_value = ws.cell(row=row_num, column=col_idx).value
+                                    if existing_value:
+                                        new_value = f"{existing_value}\n\n[Файл: {os.path.basename(file_path)}]\n{extracted_data}"
+                                    else:
+                                        new_value = f"[Файл: {os.path.basename(file_path)}]\n{extracted_data}"
 
-                    next_row += 1
-                    self.log(f"✅ Данные размещены в строке {current_row}")
+                                    ws.cell(row=row_num, column=col_idx, value=new_value)
+                                    self.log(f"   ✓ Данные добавлены в строку {row_num}, колонка '{target_column}'")
+
+                                # Добавляем объяснение
+                                ws.cell(row=row_num, column=explanation_col, value=f"[{os.path.basename(file_path)}] {explanation}")
+
+                                updated_rows.append(row_num)
+
+                        matched_count += 1
+                        self.log(f"✅ Данные размещены в {len(matched_rows)} строках")
+                    else:
+                        # Не нашли соответствие - пропускаем или добавляем в конец
+                        not_matched_count += 1
+                        self.log(f"⚠️ AI не нашел подходящих строк для этого документа")
+                        self.log(f"   Документ пропущен (данные не добавлены)")
                 else:
-                    # Демо-режим без AI
-                    self.log("⚠️ Демо-режим: размещение базовых данных")
-                    current_row = next_row
-
-                    # Пытаемся разместить в первые доступные колонки
-                    if len(headers) > 0:
-                        ws.cell(row=current_row, column=1, value=os.path.basename(file_path))
-                    if len(headers) > 1:
-                        ws.cell(row=current_row, column=2, value=text[:200])
-
-                    ws.cell(row=current_row, column=explanation_col,
-                           value="Демо-режим: AI недоступен, данные размещены автоматически")
-
-                    next_row += 1
+                    # Fallback: AI недоступен или нет существующих строк
+                    self.log("⚠️ AI недоступен или таблица пуста - файл пропущен")
+                    not_matched_count += 1
 
             # Сохранение файла
             self.log(f"\n💾 Сохранение результата: {new_filename}")
@@ -619,16 +774,20 @@ class AuditProcessorApp:
             self.log("=" * 70)
             self.log(f"📂 Файл доступен: {output_file}")
             self.log(f"📝 Обработано файлов: {len(self.selected_files)}")
-            self.log(f"📊 Заполнено строк: {next_row - start_row}")
-            self.log(f"   Начальная строка: {start_row}")
-            self.log(f"   Конечная строка: {next_row - 1}")
+            self.log(f"📊 Статистика:")
+            self.log(f"   • Файлов с найденным соответствием: {matched_count}")
+            self.log(f"   • Файлов без соответствия: {not_matched_count}")
+            self.log(f"   • Обновлено уникальных строк: {len(set(updated_rows))}")
+            if updated_rows:
+                unique_rows = sorted(set(updated_rows))
+                self.log(f"   • Номера обновленных строк: {unique_rows[:10]}{'...' if len(unique_rows) > 10 else ''}")
 
             # Активировать кнопку открытия файла
             self.open_file_btn.config(state=tk.NORMAL)
 
             messagebox.showinfo(
                 "Успех",
-                f"✅ Обработка завершена!\n\nОбработано файлов: {len(self.selected_files)}\nРезультат: {new_filename}\n\nФорматирование шаблона сохранено.\nДанные размещены с помощью AI.\n\nНажмите '📂 Открыть готовый файл'"
+                f"✅ Обработка завершена!\n\nОбработано файлов: {len(self.selected_files)}\nНайдено соответствий: {matched_count}\nОбновлено строк: {len(set(updated_rows))}\n\nРезультат: {new_filename}\n\nНажмите '📂 Открыть готовый файл'"
             )
 
         except Exception as e:
