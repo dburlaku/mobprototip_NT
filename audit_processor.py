@@ -570,35 +570,41 @@ class AuditProcessorApp:
 
         prompt = f"""Ты - ассистент для заполнения таблиц аудита.
 
-ЗАДАЧА: Проанализируй извлеченный текст и определи, в какую строку таблицы он относится по смыслу.
+ЗАДАЧА:
+1. ИСПРАВЬ ошибки OCR в извлеченном тексте
+2. Определи, в какие строки таблицы он относится
 
 СТРУКТУРА ТАБЛИЦЫ:
 - Колонка A: Комментарии
-- Колонка B: Вопросы/Требования/Информация
-- Колонка C: Свидетельства (сюда вставлять данные)
+- Колонка B: Вопросы/Требования
+- Колонка C: Свидетельства (сюда вставлять)
 
 СТРОКИ ТАБЛИЦЫ (первые 50 из {len(table_rows)}):
 {rows_text[:4000]}
 
-ИЗВЛЕЧЕННЫЙ ТЕКСТ из "{os.path.basename(file_path)}":
+ИЗВЛЕЧЕННЫЙ ТЕКСТ (с ошибками OCR):
 ---
 {extracted_text[:1200]}
 ---
 
 ИНСТРУКЦИИ:
-1. Найди строки, к которым относится извлеченный текст
-2. Данные вставляй в колонку "Свидетельства"
-3. Верни ТОЛЬКО JSON без объяснений
+1. Исправь ошибки OCR (например "СМУ Nglю" → "СМУ №1", "мерог" → "мероприятий")
+2. Найди подходящие строки таблицы
+3. Сделай ПОДРОБНОЕ описание документа (что это, кто подписал, даты, номера)
+4. Верни ТОЛЬКО JSON
 
-ФОРМАТ (верни ТОЛЬКО JSON):
+ФОРМАТ (ТОЛЬКО JSON):
 {{
   "matched_rows": [13, 82],
   "target_column": "Свидетельства",
-  "extracted_data": "Краткое описание",
-  "explanation": "Почему"
+  "extracted_data": "ПОДРОБНОЕ описание с исправленными ошибками OCR",
+  "explanation": "Почему эти строки"
 }}
 
-ВАЖНО: Если не подходит ни одна строка, верни matched_rows: []
+ВАЖНО:
+- НЕ копируй ошибки OCR, исправь их!
+- extracted_data должен быть подробным и читабельным
+- Если не подходит ни одна строка: matched_rows: []
 """
 
         try:
@@ -752,21 +758,21 @@ class AuditProcessorApp:
 
                         for row_num in matched_rows:
                             if row_num in table_rows:
-                                # Вставляем извлеченные данные в целевую колонку
+                                # Вставляем извлеченные данные в целевую колонку (БЕЗ названия файла)
                                 if target_column and target_column in header_positions:
                                     col_idx = header_positions[target_column]
                                     # Добавляем к существующим данным (не перезаписываем)
                                     existing_value = ws.cell(row=row_num, column=col_idx).value
                                     if existing_value:
-                                        new_value = f"{existing_value}\n\n[Файл: {os.path.basename(file_path)}]\n{extracted_data}"
+                                        new_value = f"{existing_value}\n\n{extracted_data}"
                                     else:
-                                        new_value = f"[Файл: {os.path.basename(file_path)}]\n{extracted_data}"
+                                        new_value = extracted_data
 
                                     ws.cell(row=row_num, column=col_idx, value=new_value)
                                     self.log(f"   ✓ Данные добавлены в строку {row_num}, колонка '{target_column}'")
 
-                                # Добавляем объяснение
-                                ws.cell(row=row_num, column=explanation_col, value=f"[{os.path.basename(file_path)}] {explanation}")
+                                # Добавляем объяснение С НАЗВАНИЕМ ФАЙЛА в колонку 4
+                                ws.cell(row=row_num, column=explanation_col, value=f"Файл: {os.path.basename(file_path)}\n{explanation}")
 
                                 updated_rows.append(row_num)
 
