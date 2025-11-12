@@ -456,7 +456,7 @@ class AuditProcessorApp:
         }
 
         try:
-            response = requests.post(url, json=payload, timeout=60)
+            response = requests.post(url, json=payload, timeout=120)
             if response.status_code == 200:
                 return response.json().get('response', '')
             else:
@@ -544,15 +544,19 @@ class AuditProcessorApp:
         """
         self.log("   🧠 AI анализирует соответствие текста строкам таблицы...")
 
-        # Формируем описание существующих строк для AI
+        # Формируем описание существующих строк для AI (ОПТИМИЗИРОВАНО)
         rows_description = []
-        for row_num, row_data in list(table_rows.items())[:50]:  # Ограничим первыми 50 строками
+        for row_num, row_data in list(table_rows.items())[:20]:  # Сокращено: 50 → 20 строк
             # Объединяем все данные строки в одну строку
             row_text = " | ".join([f"{col}: {val}" for col, val in row_data.items()])
-            rows_description.append(f"Строка {row_num}: {row_text[:200]}")
+            rows_description.append(f"Строка {row_num}: {row_text[:100]}")  # Сокращено: 200 → 100 символов
 
         rows_text = "\n".join(rows_description)
         headers_list = ", ".join([f'"{h}"' for h in headers])
+
+        # Логируем размер промпта для отладки
+        prompt_size = len(rows_text) + len(extracted_text[:1500])
+        self.log(f"   Размер данных для AI: ~{prompt_size} символов")
 
         prompt = f"""Ты - ассистент для заполнения таблиц аудита.
 
@@ -561,12 +565,12 @@ class AuditProcessorApp:
 СТРУКТУРА ТАБЛИЦЫ:
 Заголовки: {headers_list}
 
-СУЩЕСТВУЮЩИЕ СТРОКИ ТАБЛИЦЫ:
-{rows_text[:3000]}
+СУЩЕСТВУЮЩИЕ СТРОКИ ТАБЛИЦЫ (первые 20):
+{rows_text[:2000]}
 
 ИЗВЛЕЧЕННЫЙ ТЕКСТ (из файла "{os.path.basename(file_path)}"):
 ---
-{extracted_text[:2500]}
+{extracted_text[:1500]}
 ---
 
 ИНСТРУКЦИИ:
