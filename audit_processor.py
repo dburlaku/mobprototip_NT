@@ -255,6 +255,7 @@ class AuditProcessorApp:
         # Хранение выбранных файлов
         self.selected_files = []
         self.excel_file = None
+        self.excel_header_row = 1  # Номер строки с заголовками (по умолчанию 1)
         self.last_created_file = None  # Последний созданный файл
 
     def log(self, message):
@@ -360,7 +361,7 @@ class AuditProcessorApp:
         file = filedialog.askopenfilename(
             title="Выберите шаблон Excel для заполнения",
             defaultextension=".xlsx",
-            filetypes=[("Excel файлы", "*.xlsx"), ("Все файлы", "*.*")]
+            filetypes=[("Excel файлы", "*.xlsx *.xls"), ("Все файлы", "*.*")]
         )
 
         if file:
@@ -369,25 +370,78 @@ class AuditProcessorApp:
                 wb = load_workbook(file)
                 ws = wb.active
 
-                # Читаем заголовки из первой строки
+                # Ищем заголовки в первых 10 строках
+                self.log(f"📊 Анализ структуры файла: {os.path.basename(file)}")
+                self.log(f"   Активный лист: {ws.title}")
+                self.log(f"   Размер: {ws.max_row} строк x {ws.max_column} колонок")
+
+                # Показываем первые строки для диагностики
+                self.log("\n   Содержимое первых строк:")
+                header_row = None
                 headers = []
-                for cell in ws[1]:
-                    if cell.value:
-                        headers.append(str(cell.value))
+
+                for row_idx in range(1, min(11, ws.max_row + 1)):
+                    row_values = []
+                    non_empty_count = 0
+
+                    for col_idx in range(1, min(ws.max_column + 1, 21)):  # Максимум 20 колонок
+                        cell = ws.cell(row=row_idx, column=col_idx)
+                        value = cell.value
+
+                        if value is not None and str(value).strip():
+                            non_empty_count += 1
+                            row_values.append(str(value).strip()[:30])
+                        else:
+                            row_values.append("")
+
+                    # Показываем строку
+                    display_values = [v if v else "(пусто)" for v in row_values[:5]]
+                    self.log(f"   Строка {row_idx}: {' | '.join(display_values)}{'...' if len(row_values) > 5 else ''}")
+
+                    # Если нашли строку с несколькими заполненными ячейками - это кандидат на заголовки
+                    if non_empty_count >= 2 and not header_row:
+                        header_row = row_idx
+                        headers = [str(cell.value).strip() for cell in ws[row_idx] if cell.value is not None and str(cell.value).strip()]
 
                 if not headers:
-                    messagebox.showerror("Ошибка", "В шаблоне не найдены заголовки в первой строке!")
+                    error_msg = f"""В файле не найдены заголовки!
+
+Проверьте:
+1. Первая строка должна содержать названия колонок
+2. Ячейки не должны быть пустыми
+3. Файл должен быть в формате .xlsx
+
+Диагностика показала:
+- Строк в файле: {ws.max_row}
+- Колонок: {ws.max_column}
+
+Смотрите лог для деталей."""
+                    messagebox.showerror("Ошибка анализа файла", error_msg)
+                    self.log("\n❌ Заголовки не найдены!")
+                    self.log("   Возможные причины:")
+                    self.log("   - Первые строки пустые")
+                    self.log("   - Заголовки объединены в одну ячейку")
+                    self.log("   - Файл имеет нестандартную структуру")
                     return
 
                 self.excel_file = file
+                self.excel_header_row = header_row  # Сохраняем номер строки с заголовками
                 self.excel_path_var.set(os.path.basename(file))
-                self.log(f"✅ Выбран шаблон Excel: {os.path.basename(file)}")
+
+                self.log(f"\n✅ Выбран шаблон Excel: {os.path.basename(file)}")
+                self.log(f"   Строка заголовков: {header_row}")
                 self.log(f"   Найдено колонок: {len(headers)}")
-                self.log(f"   Заголовки: {', '.join(headers[:5])}{'...' if len(headers) > 5 else ''}")
+                self.log(f"   Заголовки:")
+                for i, h in enumerate(headers[:10], start=1):
+                    self.log(f"      {i}. {h}")
+                if len(headers) > 10:
+                    self.log(f"      ... и еще {len(headers) - 10} колонок")
 
             except Exception as e:
                 messagebox.showerror("Ошибка", f"Не удалось открыть шаблон:\n{e}")
                 self.log(f"❌ Ошибка чтения шаблона: {e}")
+                import traceback
+                self.log(f"   Подробности:\n{traceback.format_exc()}")
 
     def query_ollama(self, prompt, context=""):
         """Запрос к Ollama API"""
@@ -459,8 +513,12 @@ class AuditProcessorApp:
             headers = []
             header_positions = {}  # {имя колонки: индекс колонки}
 
-            for idx, cell in enumerate(ws[1], start=1):
-                if cell.value:
+            # Используем сохраненный номер строки с заголовками
+            header_row_num = getattr(self, 'excel_header_row', 1)
+            self.log(f"   Чтение заголовков из строки {header_row_num}")
+
+            for idx, cell in enumerate(ws[header_row_num], start=1):
+                if cell.value and str(cell.value).strip():
                     header_name = str(cell.value).strip()
                     headers.append(header_name)
                     header_positions[header_name] = idx
@@ -473,18 +531,34 @@ class AuditProcessorApp:
 
             # Добавляем колонку для объяснений если её нет
             explanation_col = None
-            for col_name in ["Объяснение размещения", "Пояснения", "Комментарии AI"]:
+            for col_name in ["Объяснение размещения", "Пояснения", "Комментарии AI", "Объяснение AI"]:
                 if col_name in header_positions:
                     explanation_col = header_positions[col_name]
+                    self.log(f"   Используется существующая колонка '{col_name}' для объяснений")
                     break
 
             if not explanation_col:
                 explanation_col = len(headers) + 1
-                ws.cell(row=1, column=explanation_col, value="Объяснение AI")
+                # Добавляем в строку заголовков
+                ws.cell(row=header_row_num, column=explanation_col, value="Объяснение AI")
                 self.log(f"   Добавлена колонка 'Объяснение AI' (позиция {explanation_col})")
 
-            # Определяем следующую пустую строку
-            next_row = ws.max_row + 1
+            # Определяем следующую пустую строку (после заголовков и существующих данных)
+            # Ищем первую полностью пустую строку после заголовков
+            next_row = header_row_num + 1
+            for row_idx in range(header_row_num + 1, ws.max_row + 2):
+                # Проверяем, есть ли данные в строке
+                has_data = False
+                for col_idx in range(1, len(headers) + 1):
+                    if ws.cell(row=row_idx, column=col_idx).value:
+                        has_data = True
+                        break
+
+                if not has_data:
+                    next_row = row_idx
+                    break
+
+            self.log(f"   Начало заполнения с строки: {next_row}")
 
             # Обработка каждого файла
             for idx, file_path in enumerate(self.selected_files, start=1):
