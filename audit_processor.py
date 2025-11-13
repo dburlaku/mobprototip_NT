@@ -535,7 +535,7 @@ class AuditProcessorApp:
                     full_prompt,
                     generation_config={
                         "temperature": 0.1,
-                        "max_output_tokens": 2000,  # Увеличен лимит для JSON ответов
+                        "max_output_tokens": 8000,  # Увеличен лимит для больших JSON ответов
                     },
                     safety_settings=[
                         {"category": "HARM_CATEGORY_HARASSMENT", "threshold": "BLOCK_NONE"},
@@ -561,14 +561,29 @@ class AuditProcessorApp:
                             safety_info = f"\nSafety ratings: {candidate.safety_ratings}"
                         return f"Gemini заблокировал ответ: {reason_names.get(finish_reason, finish_reason)}{safety_info}"
 
-                    # Пытаемся получить текст
-                    if candidate.content and candidate.content.parts:
-                        return candidate.content.parts[0].text
+                    # Пытаемся получить текст (используем несколько способов)
+                    text = None
+
+                    # Способ 1: через candidate.content.parts
+                    if candidate.content and candidate.content.parts and len(candidate.content.parts) > 0:
+                        text = candidate.content.parts[0].text
+
+                    # Способ 2: через response.text (если первый способ не сработал)
+                    if not text:
+                        try:
+                            text = response.text
+                        except:
+                            pass
+
+                    if text:
+                        return text
                     else:
                         # Детальная диагностика пустого ответа
                         debug_info = f"finish_reason={finish_reason}"
-                        if hasattr(candidate, 'safety_ratings'):
-                            debug_info += f", safety_ratings={candidate.safety_ratings}"
+                        has_content = "yes" if candidate.content else "no"
+                        has_parts = "yes" if (candidate.content and candidate.content.parts) else "no"
+                        parts_count = len(candidate.content.parts) if (candidate.content and candidate.content.parts) else 0
+                        debug_info += f", has_content={has_content}, has_parts={has_parts}, parts_count={parts_count}"
                         return f"Gemini вернул пустой ответ ({debug_info})"
                 else:
                     return "Gemini не вернул кандидатов ответа"
