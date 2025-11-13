@@ -958,6 +958,38 @@ class AuditProcessorApp:
 
                 except json.JSONDecodeError as je:
                     self.log(f"   ⚠️ Ошибка парсинга JSON: {je}")
+
+                    # РЕЗЕРВНЫЙ ПАРСИНГ: Извлекаем поля через regex если JSON невалидный
+                    self.log(f"   🔧 Попытка резервного извлечения данных через regex...")
+
+                    try:
+                        # Извлекаем matched_rows
+                        rows_match = re.search(r'"matched_rows"\s*:\s*\[([^\]]+)\]', response)
+                        if rows_match:
+                            rows_str = rows_match.group(1)
+                            # Парсим числа из строки "[139,53]" или "[139, 53]"
+                            rows_list = [int(x.strip()) for x in rows_str.split(',') if x.strip().isdigit()]
+
+                            # Извлекаем target_column (опционально)
+                            column_match = re.search(r'"target_column"\s*:\s*"([^"]+)"', response)
+                            target_column = column_match.group(1) if column_match else "Свидетельства"
+
+                            if rows_list:
+                                result = {
+                                    "matched_rows": rows_list,
+                                    "target_column": target_column,
+                                    "extracted_data": extracted_text[:500],  # Используем оригинальный текст
+                                    "explanation": "Извлечено через резервный парсинг"
+                                }
+
+                                self.log(f"   ✓ Резервный парсинг успешен: найдено {len(rows_list)} строк")
+                                self.log(f"     Строки: {rows_list}")
+                                self.log(f"     Целевая колонка: {target_column}")
+
+                                return result
+                    except Exception as e:
+                        self.log(f"   ⚠️ Резервный парсинг не удался: {e}")
+
                     return None
             else:
                 self.log("   ⚠️ JSON не найден в ответе AI")
