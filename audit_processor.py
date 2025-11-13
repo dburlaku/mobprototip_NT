@@ -471,7 +471,13 @@ class AuditProcessorApp:
         payload = {
             "model": self.model_name,
             "prompt": full_prompt,
-            "stream": False
+            "stream": False,
+            "options": {
+                "temperature": 0.1,    # Меньше креативности = быстрее и точнее
+                "num_predict": 250,    # Ограничение длины ответа
+                "top_k": 10,           # Меньше вариантов = быстрее
+                "top_p": 0.9           # Фокус на наиболее вероятных вариантах
+            }
         }
 
         try:
@@ -603,15 +609,15 @@ class AuditProcessorApp:
 
             # Включаем в индекс ТОЛЬКО строки для заполнения
             if not is_header:
-                # Показываем до 35 символов на строку (сокращаем промпт для уменьшения timeout)
-                rows_description.append(f"Строка {row_num}: {row_text[:35]}")
+                # Показываем до 25 символов на строку (оптимизация для ollama)
+                rows_description.append(f"Строка {row_num}: {row_text[:25]}")
                 fillable_rows_count += 1
 
         index_text = "\n".join(rows_description)
 
-        # Устанавливаем лимит 7500 символов (компромисс между полнотой индекса и скоростью AI)
-        # При 35 символах на строку + 12 префикс = 47*152 = ~7144, влезет все 152 строки
-        max_index_size = 7500
+        # Устанавливаем лимит 6000 символов (оптимизация нагрузки на ollama)
+        # При 25 символах на строку + 12 префикс = 37*152 = ~5624, влезет все 152 строки
+        max_index_size = 6000
         if len(index_text) > max_index_size:
             # Обрезаем если все равно не влезло
             lines = index_text.split('\n')
@@ -700,11 +706,11 @@ class AuditProcessorApp:
             prompt = f"""ТАБЛИЦА:
 {table_index}
 
-ТЕКСТ ИЗ ДОКУМЕНТА:
-{extracted_text[:600]}
+ТЕКСТ:
+{extracted_text[:450]}
 
-Найди 1-2 строки таблицы для этого текста. Исправь ошибки OCR. JSON (двойные кавычки!):
-{{"matched_rows":[номера],"target_column":"Свидетельства","extracted_data":"ВЕСЬ исправленный текст","explanation":"причина"}}"""
+Найди 1-2 строки таблицы для этого текста. JSON:
+{{"matched_rows":[номера],"target_column":"Свидетельства","extracted_data":"весь текст выше","explanation":"причина"}}"""
             self.log(f"   Использую индекс строк (ускоренный режим)")
         else:
             # Без индекса - полный анализ (МЕДЛЕННО)
