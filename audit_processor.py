@@ -551,17 +551,25 @@ class AuditProcessorApp:
 
                     # Проверяем finish_reason
                     # 1=STOP (норма), 2=MAX_TOKENS (ок, частичный ответ), 3=SAFETY, 4=RECITATION, 5=OTHER
-                    if hasattr(candidate, 'finish_reason'):
-                        finish_reason = str(candidate.finish_reason)
-                        if finish_reason in ["3", "4", "5"]:  # Только реальные блокировки
-                            reason_names = {"3": "SAFETY", "4": "RECITATION", "5": "OTHER"}
-                            return f"Gemini заблокировал ответ: {reason_names.get(finish_reason, finish_reason)}"
+                    finish_reason = str(candidate.finish_reason) if hasattr(candidate, 'finish_reason') else "unknown"
+
+                    if finish_reason in ["3", "4", "5"]:  # Только реальные блокировки
+                        reason_names = {"3": "SAFETY", "4": "RECITATION", "5": "OTHER"}
+                        # Добавляем детали о причине блокировки
+                        safety_info = ""
+                        if hasattr(candidate, 'safety_ratings'):
+                            safety_info = f"\nSafety ratings: {candidate.safety_ratings}"
+                        return f"Gemini заблокировал ответ: {reason_names.get(finish_reason, finish_reason)}{safety_info}"
 
                     # Пытаемся получить текст
                     if candidate.content and candidate.content.parts:
                         return candidate.content.parts[0].text
                     else:
-                        return "Gemini вернул пустой ответ"
+                        # Детальная диагностика пустого ответа
+                        debug_info = f"finish_reason={finish_reason}"
+                        if hasattr(candidate, 'safety_ratings'):
+                            debug_info += f", safety_ratings={candidate.safety_ratings}"
+                        return f"Gemini вернул пустой ответ ({debug_info})"
                 else:
                     return "Gemini не вернул кандидатов ответа"
 
