@@ -475,7 +475,8 @@ class AuditProcessorApp:
         }
 
         try:
-            response = requests.post(url, json=payload, timeout=180)
+            # Увеличен timeout до 240 сек для сложных запросов
+            response = requests.post(url, json=payload, timeout=240)
             if response.status_code == 200:
                 return response.json().get('response', '')
             else:
@@ -602,14 +603,14 @@ class AuditProcessorApp:
 
             # Включаем в индекс ТОЛЬКО строки для заполнения
             if not is_header:
-                # Показываем до 150 символов на строку
-                rows_description.append(f"Строка {row_num}: {row_text[:150]}")
+                # Показываем до 80 символов на строку (уменьшено с 150 для оптимизации)
+                rows_description.append(f"Строка {row_num}: {row_text[:80]}")
                 fillable_rows_count += 1
 
         index_text = "\n".join(rows_description)
 
-        # Увеличиваем лимит до 12000 символов (чтобы вместить все 152 строки)
-        max_index_size = 12000
+        # Уменьшаем лимит до 7000 символов (было 12000) для предотвращения timeout
+        max_index_size = 7000
         if len(index_text) > max_index_size:
             # Обрезаем если все равно не влезло
             lines = index_text.split('\n')
@@ -689,25 +690,16 @@ class AuditProcessorApp:
 
         # Если есть индекс - используем его (БЫСТРО!)
         if table_index:
-            prompt = f"""Ты помогаешь заполнить таблицу аудита. Я дам тебе:
-1. Список вопросов/тем из таблицы
-2. Текст из фотографии/документа (ответ/свидетельство)
-
-ВОПРОСЫ ИЗ ТАБЛИЦЫ:
+            prompt = f"""ТАБЛИЦА (вопросы для заполнения):
 {table_index}
 
-ТЕКСТ ИЗ ФОТОГРАФИИ (может быть ответом на один из вопросов):
-{extracted_text[:1000]}
+ТЕКСТ ИЗ ФОТО (ответ):
+{extracted_text[:800]}
 
-ЗАДАЧА:
-1. Исправь ошибки OCR в ТЕКСТЕ ИЗ ФОТОГРАФИИ
-2. Определи, на какие ВОПРОСЫ ИЗ ТАБЛИЦЫ отвечает этот текст
-3. Верни НОМЕРА СТРОК где эти вопросы + ИСПРАВЛЕННЫЙ ТЕКСТ ИЗ ФОТОГРАФИИ
+Исправь ошибки OCR. Найди 1-3 строки таблицы, где текст из фото подходит как ответ. Верни JSON:
+{{"matched_rows":[123],"target_column":"Свидетельства","extracted_data":"исправленный текст","explanation":"причина"}}
 
-ФОРМАТ ОТВЕТА (строго JSON, без текста до/после):
-{{"matched_rows":[123,145],"target_column":"Свидетельства","extracted_data":"исправленный текст из фото","explanation":"текст отвечает на вопросы о..."}}
-
-ВЕРНИ ТОЛЬКО JSON!"""
+ТОЛЬКО JSON!"""
             self.log(f"   Использую индекс строк (ускоренный режим)")
         else:
             # Без индекса - полный анализ (МЕДЛЕННО)
