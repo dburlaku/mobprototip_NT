@@ -584,22 +584,35 @@ class AuditProcessorApp:
         """
         self.log("🗂️ Создание индекса строк таблицы (один раз)...")
 
-        # Формируем ПОЛНОЕ описание всех строк (без AI, просто текст)
+        # Формируем описание всех строк (без AI, просто текст)
         rows_description = []
         for row_num, row_data in table_rows.items():
-            # Берем ПОЛНЫЙ текст из всех колонок
+            # Берем текст из всех колонок
             row_text = " | ".join([f"{val}" for val in row_data.values()])
-            # Показываем до 300 символов на строку
-            rows_description.append(f"Строка {row_num}: {row_text[:300]}")
+            # Показываем до 150 символов на строку (уменьшено с 300 для оптимизации)
+            rows_description.append(f"Строка {row_num}: {row_text[:150]}")
 
         index_text = "\n".join(rows_description)
 
-        # Обрезаем до разумного размера (чтобы не превышать лимит промпта)
-        max_index_size = 15000
+        # Обрезаем до 8000 символов (уменьшено с 15000 для предотвращения timeout)
+        # Это позволит AI обрабатывать промпт быстрее
+        max_index_size = 8000
         if len(index_text) > max_index_size:
-            index_text = index_text[:max_index_size] + "\n... (показаны первые строки)"
+            # Обрезаем и добавляем примечание
+            lines = index_text.split('\n')
+            truncated_lines = []
+            current_size = 0
+            for line in lines:
+                if current_size + len(line) + 1 > max_index_size:
+                    break
+                truncated_lines.append(line)
+                current_size += len(line) + 1
+            index_text = "\n".join(truncated_lines)
+            rows_shown = len(truncated_lines)
+            self.log(f"✅ Индекс создан ({len(index_text)} символов, {rows_shown}/{len(rows_description)} строк)")
+        else:
+            self.log(f"✅ Индекс создан ({len(index_text)} символов, {len(rows_description)} строк)")
 
-        self.log(f"✅ Индекс создан ({len(index_text)} символов, {len(rows_description)} строк)")
         return index_text
 
     def clean_json_for_parsing(self, json_str):
@@ -666,10 +679,10 @@ class AuditProcessorApp:
             prompt = f"""Найди подходящие строки таблицы для текста из документа.
 
 СПИСОК СТРОК ТАБЛИЦЫ:
-{table_index[:12000]}
+{table_index}
 
 ТЕКСТ ИЗ ДОКУМЕНТА:
-{extracted_text[:1200]}
+{extracted_text[:1000]}
 
 ИНСТРУКЦИИ:
 1. Исправь ошибки OCR: "СМУ Nglю"→"СМУ №1", "мерог"→"мероприятий", удали лишние пробелы
@@ -768,6 +781,9 @@ class AuditProcessorApp:
     def process_files(self):
         """Обработка файлов с анализом существующей таблицы и умным размещением данных"""
 
+        import time
+        start_time_total = time.time()
+
         self.log("\n" + "=" * 70)
         self.log("🚀 НАЧАЛО ОБРАБОТКИ")
         self.log("=" * 70)
@@ -848,6 +864,7 @@ class AuditProcessorApp:
 
             # Обработка каждого файла
             for idx, file_path in enumerate(self.selected_files, start=1):
+                file_start_time = time.time()
                 self.log(f"\n📄 [{idx}/{len(self.selected_files)}] Обработка: {os.path.basename(file_path)}")
 
                 file_ext = os.path.splitext(file_path)[1].lower()
@@ -902,14 +919,25 @@ class AuditProcessorApp:
                     self.log("⚠️ AI недоступен или таблица пуста - файл пропущен")
                     not_matched_count += 1
 
+                # Логируем время обработки файла
+                file_elapsed = time.time() - file_start_time
+                self.log(f"   ⏱️ Время обработки файла: {file_elapsed:.1f} сек")
+
             # Сохранение файла
             self.log(f"\n💾 Сохранение результата: {new_filename}")
             wb.save(output_file)
             self.last_created_file = output_file
 
+            # Подсчет общего времени
+            total_elapsed = time.time() - start_time_total
+            minutes = int(total_elapsed // 60)
+            seconds = int(total_elapsed % 60)
+            time_str = f"{minutes} мин {seconds} сек" if minutes > 0 else f"{seconds} сек"
+
             self.log("\n" + "=" * 70)
             self.log("✅ ОБРАБОТКА ЗАВЕРШЕНА УСПЕШНО!")
             self.log("=" * 70)
+            self.log(f"⏱️  ОБЩЕЕ ВРЕМЯ ОБРАБОТКИ: {time_str}")
             self.log(f"📂 Файл доступен: {output_file}")
             self.log(f"📝 Обработано файлов: {len(self.selected_files)}")
             self.log(f"📊 Статистика:")
