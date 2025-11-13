@@ -536,9 +536,33 @@ class AuditProcessorApp:
                     generation_config={
                         "temperature": 0.1,
                         "max_output_tokens": 500,
-                    }
+                    },
+                    safety_settings=[
+                        {"category": "HARM_CATEGORY_HARASSMENT", "threshold": "BLOCK_NONE"},
+                        {"category": "HARM_CATEGORY_HATE_SPEECH", "threshold": "BLOCK_NONE"},
+                        {"category": "HARM_CATEGORY_SEXUALLY_EXPLICIT", "threshold": "BLOCK_NONE"},
+                        {"category": "HARM_CATEGORY_DANGEROUS_CONTENT", "threshold": "BLOCK_NONE"},
+                    ]
                 )
-                return response.text
+
+                # Безопасная проверка наличия текста в ответе
+                if response.candidates and len(response.candidates) > 0:
+                    candidate = response.candidates[0]
+
+                    # Проверяем finish_reason
+                    if hasattr(candidate, 'finish_reason'):
+                        finish_reason = str(candidate.finish_reason)
+                        if finish_reason != "STOP" and finish_reason != "1":  # 1 = STOP
+                            return f"Gemini заблокировал ответ: {finish_reason}"
+
+                    # Пытаемся получить текст
+                    if candidate.content and candidate.content.parts:
+                        return candidate.content.parts[0].text
+                    else:
+                        return "Gemini вернул пустой ответ"
+                else:
+                    return "Gemini не вернул кандидатов ответа"
+
             except Exception as e:
                 return f"Ошибка Gemini: {e}"
 
