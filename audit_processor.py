@@ -542,10 +542,22 @@ class AuditProcessorApp:
 
         self.log(f"   ✓ Найдено строк с данными: {len(table_rows)}")
 
-        # Показываем примеры строк с вопросами
-        question_count = sum(1 for row_data in table_rows.values()
-                            if "?" in " ".join([str(v) for v in row_data.values()]))
-        self.log(f"   ✓ Из них строк с вопросами: {question_count}")
+        # Подсчитываем строки для заполнения (не заголовки)
+        # Заголовки обычно короткие (<50 символов) или содержат ключевые слова
+        fillable_count = 0
+        header_keywords = ['элемент стандарта', 'пункты к проверке', 'комментарии:',
+                          'представитель', 'проверка дополнительных', 'критерий:', 'требования к см']
+
+        for row_data in table_rows.values():
+            row_text = " ".join([str(v).lower() for v in row_data.values()])
+            # Строка для заполнения если:
+            # 1. Длиннее 50 символов (не короткий заголовок)
+            # 2. Не содержит ключевые слова заголовков
+            is_header = len(row_text) < 50 or any(keyword in row_text for keyword in header_keywords)
+            if not is_header:
+                fillable_count += 1
+
+        self.log(f"   ✓ Из них строк для заполнения: {fillable_count} (остальные - заголовки)")
 
         # Показываем примеры первых 5 строк
         sample_count = min(5, len(table_rows))
