@@ -79,12 +79,15 @@ class AuditProcessorApp:
                 try:
                     import google.generativeai as genai
                     genai.configure(api_key=self.gemini_api_key)
-                    self.gemini_client = genai.GenerativeModel(self.gemini_model)
+                    # Убираем префикс "models/" если он есть
+                    model_name = self.gemini_model.replace("models/", "")
+                    self.gemini_client = genai.GenerativeModel(model_name)
                     self.ai_available = True
-                    print(f"✅ Google Gemini подключен ({self.gemini_model})")
+                    print(f"✅ Google Gemini подключен ({model_name})")
                     print("🎉 Обработка будет в 10-20 раз быстрее чем с Ollama!")
                 except Exception as e:
                     print(f"❌ Ошибка подключения Gemini: {e}")
+                    print(f"   Попробуйте модель: gemini-1.5-flash-latest")
                     self.ai_available = False
             else:
                 print("❌ API ключ Gemini не найден в config.json")

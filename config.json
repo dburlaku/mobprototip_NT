@@ -2,7 +2,7 @@
   "ai_provider": "gemini",
   "gemini": {
     "api_key": "AIzaSyC_pJCsHg9qwGJesQTE3h3cQatWX0z6L-M",
-    "model": "gemini-1.5-flash"
+    "model": "gemini-1.5-flash-latest"
   },
   "ollama": {
     "model": "llama3.2:latest",
