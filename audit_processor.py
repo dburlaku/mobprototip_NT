@@ -41,18 +41,65 @@ class AuditProcessorApp:
         self.root.geometry("900x700")
         self.root.configure(bg="#f5f5f5")
 
-        # Проверка Ollama при запуске
-        self.ollama_available = self.check_ollama()
-        # Попробуем использовать быструю модель, если доступна
-        if self.check_model_available("llama3.2:1b"):
-            self.model_name = "llama3.2:1b"
-            print("✅ Используется быстрая модель llama3.2:1b (в 3-4 раза быстрее!)")
-        else:
-            self.model_name = "llama3.2:latest"
-            print("ℹ️ Используется стандартная модель llama3.2:latest")
-            print("💡 Для ускорения в 3-4 раза запустите: install_fast_model.bat")
+        # Загрузка конфигурации
+        self.load_config()
+
+        # Инициализация AI провайдера
+        self.init_ai_provider()
 
         self.setup_ui()
+
+    def load_config(self):
+        """Загрузка конфигурации из config.json"""
+        config_path = Path(__file__).parent / "config.json"
+
+        if config_path.exists():
+            try:
+                with open(config_path, 'r', encoding='utf-8') as f:
+                    self.config = json.load(f)
+                print(f"✅ Конфигурация загружена из {config_path}")
+            except Exception as e:
+                print(f"⚠️ Ошибка загрузки config.json: {e}")
+                self.config = {"ai_provider": "ollama"}
+        else:
+            print("ℹ️ config.json не найден, используется Ollama по умолчанию")
+            self.config = {"ai_provider": "ollama"}
+
+    def init_ai_provider(self):
+        """Инициализация AI провайдера"""
+        self.ai_provider = self.config.get("ai_provider", "ollama")
+
+        if self.ai_provider == "gemini":
+            # Google Gemini
+            gemini_config = self.config.get("gemini", {})
+            self.gemini_api_key = gemini_config.get("api_key")
+            self.gemini_model = gemini_config.get("model", "gemini-1.5-flash")
+
+            if self.gemini_api_key:
+                try:
+                    import google.generativeai as genai
+                    genai.configure(api_key=self.gemini_api_key)
+                    self.gemini_client = genai.GenerativeModel(self.gemini_model)
+                    self.ai_available = True
+                    print(f"✅ Google Gemini подключен ({self.gemini_model})")
+                    print("🎉 Обработка будет в 10-20 раз быстрее чем с Ollama!")
+                except Exception as e:
+                    print(f"❌ Ошибка подключения Gemini: {e}")
+                    self.ai_available = False
+            else:
+                print("❌ API ключ Gemini не найден в config.json")
+                self.ai_available = False
+        else:
+            # Ollama (по умолчанию)
+            self.ollama_available = self.check_ollama()
+            self.ai_available = self.ollama_available
+
+            if self.check_model_available("llama3.2:1b"):
+                self.model_name = "llama3.2:1b"
+                print("✅ Используется быстрая модель llama3.2:1b")
+            else:
+                self.model_name = "llama3.2:latest"
+                print("ℹ️ Используется стандартная модель llama3.2:latest")
 
     def check_ollama(self):
         """Проверка доступности Ollama"""
@@ -100,12 +147,17 @@ class AuditProcessorApp:
         main_container = tk.Frame(self.root, bg="#f5f5f5")
         main_container.pack(fill=tk.BOTH, expand=True, padx=20, pady=20)
 
-        # Статус Ollama
+        # Статус AI
         status_frame = tk.Frame(main_container, bg="white", relief=tk.RAISED, borderwidth=1)
         status_frame.pack(fill=tk.X, pady=(0, 15))
 
-        status_color = "#27ae60" if self.ollama_available else "#e74c3c"
-        status_text = "✅ Ollama подключен" if self.ollama_available else "❌ Ollama не подключен"
+        # Определяем статус в зависимости от провайдера
+        if self.ai_provider == "gemini":
+            status_color = "#27ae60" if self.ai_available else "#e74c3c"
+            status_text = f"✅ Google Gemini подключен ({self.gemini_model})" if self.ai_available else "❌ Gemini не подключен"
+        else:
+            status_color = "#27ae60" if self.ai_available else "#e74c3c"
+            status_text = "✅ Ollama подключен" if self.ai_available else "❌ Ollama не подключен"
 
         status_label = tk.Label(
             status_frame,
@@ -262,12 +314,19 @@ class AuditProcessorApp:
         self.log("=" * 70)
         self.log("🔍 Audit Processor v1.0 запущен")
         self.log("=" * 70)
-        if self.ollama_available:
-            self.log("✅ Локальная нейросеть Ollama готова к работе")
+        if self.ai_provider == "gemini":
+            if self.ai_available:
+                self.log(f"✅ Google Gemini подключен ({self.gemini_model})")
+                self.log("🎉 Обработка будет быстрой и качественной!")
+            else:
+                self.log("❌ ВНИМАНИЕ: Gemini не подключен!")
+                self.log("   Проверьте API ключ в config.json")
         else:
-            self.log("❌ ВНИМАНИЕ: Ollama не подключен!")
-            self.log("   Убедитесь, что Ollama запущен: ollama serve")
-            self.log("   И модель установлена: ollama pull qwen2.5:latest")
+            if self.ai_available:
+                self.log("✅ Локальная нейросеть Ollama готова к работе")
+            else:
+                self.log("❌ ВНИМАНИЕ: Ollama не подключен!")
+                self.log("   Убедитесь, что Ollama запущен: ollama serve")
         self.log("")
 
         # Хранение выбранных файлов
@@ -463,25 +522,39 @@ class AuditProcessorApp:
                 self.log(f"   Подробности:\n{traceback.format_exc()}")
 
     def query_ollama(self, prompt, context=""):
-        """Запрос к Ollama API"""
-        url = "http://localhost:11434/api/generate"
-
+        """Запрос к AI (поддержка Ollama и Gemini)"""
         full_prompt = f"{context}\n\n{prompt}" if context else prompt
+
+        # Google Gemini
+        if self.ai_provider == "gemini":
+            try:
+                response = self.gemini_client.generate_content(
+                    full_prompt,
+                    generation_config={
+                        "temperature": 0.1,
+                        "max_output_tokens": 500,
+                    }
+                )
+                return response.text
+            except Exception as e:
+                return f"Ошибка Gemini: {e}"
+
+        # Ollama (по умолчанию)
+        url = "http://localhost:11434/api/generate"
 
         payload = {
             "model": self.model_name,
             "prompt": full_prompt,
             "stream": False,
             "options": {
-                "temperature": 0.1,    # Меньше креативности = быстрее и точнее
-                "num_predict": 250,    # Ограничение длины ответа
-                "top_k": 10,           # Меньше вариантов = быстрее
-                "top_p": 0.9           # Фокус на наиболее вероятных вариантах
+                "temperature": 0.1,
+                "num_predict": 250,
+                "top_k": 10,
+                "top_p": 0.9
             }
         }
 
         try:
-            # Увеличен timeout до 300 сек (5 минут) для обработки длинных документов
             response = requests.post(url, json=payload, timeout=300)
             if response.status_code == 200:
                 return response.json().get('response', '')
@@ -506,10 +579,11 @@ class AuditProcessorApp:
             messagebox.showwarning("Предупреждение", "Выберите выходной Excel файл!")
             return
 
-        if not self.ollama_available:
+        if not self.ai_available:
+            provider_name = "Google Gemini" if self.ai_provider == "gemini" else "Ollama"
             result = messagebox.askyesno(
-                "Ollama недоступен",
-                "Ollama не подключен. Обработка будет выполнена в демо-режиме.\n\nПродолжить?"
+                f"{provider_name} недоступен",
+                f"{provider_name} не подключен. Обработка будет выполнена в демо-режиме.\n\nПродолжить?"
             )
             if not result:
                 return
@@ -901,7 +975,7 @@ class AuditProcessorApp:
 
             # СОЗДАЕМ ИНДЕКС ТАБЛИЦЫ ОДИН РАЗ (ускорение!)
             table_index = None
-            if self.ollama_available and table_rows:
+            if self.ai_available and table_rows:
                 table_index = self.create_table_index(table_rows)
 
             # Обработка каждого файла
@@ -923,7 +997,7 @@ class AuditProcessorApp:
                 self.log(f"   📝 Распознанный текст: {text_preview}...")
 
                 # AI-анализ и сопоставление с существующими строками
-                if self.ollama_available and table_rows:
+                if self.ai_available and table_rows:
                     match_result = self.match_text_to_rows(text, table_rows, file_path, headers, table_index)
 
                     if match_result and match_result.get("matched_rows"):
