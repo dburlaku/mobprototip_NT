@@ -697,16 +697,16 @@ class AuditProcessorApp:
 
         # Если есть индекс - используем его (БЫСТРО!)
         if table_index:
-            prompt = f"""ВОПРОСЫ (таблица):
+            prompt = f"""ВОПРОСЫ:
 {table_index}
 
-ОТВЕТ (документ, есть ошибки OCR):
+ДОКУМЕНТ (текст с ошибками OCR):
 {extracted_text[:600]}
 
-Исправь ошибки в ОТВЕТЕ. Найди 1-3 строки таблицы где этот ответ подходит. JSON с исправленным ОТВЕТОМ:
-{{"matched_rows":[номера],"target_column":"Свидетельства","extracted_data":"...исправленный ответ из документа...","explanation":"..."}}
+ЗАДАЧА: Исправь ВСЕ ошибки OCR в тексте документа. Найди 1-3 строки где исправленный текст является ответом.
 
-ТОЛЬКО JSON!"""
+ВЕРНИ JSON (ничего кроме JSON!):
+{{"matched_rows":[целые числа],"target_column":"Свидетельства","extracted_data":"исправленный текст","explanation":"причина"}}"""
             self.log(f"   Использую индекс строк (ускоренный режим)")
         else:
             # Без индекса - полный анализ (МЕДЛЕННО)
@@ -770,20 +770,32 @@ class AuditProcessorApp:
                     result = json.loads(json_str)
 
                     if "matched_rows" in result:
-                        # Преобразуем все элементы в числа (AI может вернуть строки '26' вместо 26)
+                        # Преобразуем все элементы в целые числа (AI может вернуть '26', 26.0, "26")
+                        # Фильтруем невалидные значения (дробные числа, не-числа)
                         rows_list = result['matched_rows']
-                        try:
-                            rows_list = [int(r) if isinstance(r, str) else r for r in rows_list]
-                            result['matched_rows'] = rows_list
-                        except (ValueError, TypeError) as e:
-                            self.log(f"   ⚠️ Ошибка преобразования номеров строк: {e}")
+                        valid_rows = []
+                        for r in rows_list:
+                            try:
+                                # Преобразуем в float, потом в int
+                                num = float(r) if isinstance(r, str) else r
+                                # Проверяем что это целое число (без дробной части)
+                                if isinstance(num, (int, float)) and num == int(num):
+                                    valid_rows.append(int(num))
+                                else:
+                                    self.log(f"   ⚠️ Пропущен дробный номер строки: {r}")
+                            except (ValueError, TypeError):
+                                self.log(f"   ⚠️ Пропущен невалидный номер строки: {r}")
+
+                        if not valid_rows:
+                            self.log(f"   ⚠️ Нет валидных номеров строк после фильтрации")
                             return None
 
-                        matched_count = len(rows_list)
+                        result['matched_rows'] = valid_rows
+                        matched_count = len(valid_rows)
                         self.log(f"   ✓ AI определил соответствие с {matched_count} строками")
 
                         if matched_count > 0:
-                            self.log(f"     Строки: {rows_list}")
+                            self.log(f"     Строки: {valid_rows}")
                             self.log(f"     Целевая колонка: {result.get('target_column', 'не указана')}")
 
                         return result
