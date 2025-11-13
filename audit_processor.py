@@ -475,8 +475,8 @@ class AuditProcessorApp:
         }
 
         try:
-            # Увеличен timeout до 240 сек для сложных запросов
-            response = requests.post(url, json=payload, timeout=240)
+            # Увеличен timeout до 300 сек (5 минут) для обработки длинных документов
+            response = requests.post(url, json=payload, timeout=300)
             if response.status_code == 200:
                 return response.json().get('response', '')
             else:
