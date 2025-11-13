@@ -535,7 +535,7 @@ class AuditProcessorApp:
                     full_prompt,
                     generation_config={
                         "temperature": 0.1,
-                        "max_output_tokens": 500,
+                        "max_output_tokens": 2000,  # Увеличен лимит для JSON ответов
                     },
                     safety_settings=[
                         {"category": "HARM_CATEGORY_HARASSMENT", "threshold": "BLOCK_NONE"},
@@ -550,10 +550,12 @@ class AuditProcessorApp:
                     candidate = response.candidates[0]
 
                     # Проверяем finish_reason
+                    # 1=STOP (норма), 2=MAX_TOKENS (ок, частичный ответ), 3=SAFETY, 4=RECITATION, 5=OTHER
                     if hasattr(candidate, 'finish_reason'):
                         finish_reason = str(candidate.finish_reason)
-                        if finish_reason != "STOP" and finish_reason != "1":  # 1 = STOP
-                            return f"Gemini заблокировал ответ: {finish_reason}"
+                        if finish_reason in ["3", "4", "5"]:  # Только реальные блокировки
+                            reason_names = {"3": "SAFETY", "4": "RECITATION", "5": "OTHER"}
+                            return f"Gemini заблокировал ответ: {reason_names.get(finish_reason, finish_reason)}"
 
                     # Пытаемся получить текст
                     if candidate.content and candidate.content.parts:
