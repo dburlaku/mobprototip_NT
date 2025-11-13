@@ -889,6 +889,29 @@ class AuditProcessorApp:
             if not json_match:
                 json_match = re.search(r'\{[^{}]*(?:\{[^{}]*\}[^{}]*)*\}', response)
 
+            # Если не нашли полный JSON, попробуем починить обрезанный
+            if not json_match:
+                # Ищем начало JSON даже если он не закрыт
+                partial_match = re.search(r'\{[\s\S]*?"matched_rows"\s*:\s*\[[\s\S]*', response)
+                if partial_match:
+                    json_str = partial_match.group(0)
+                    # Пытаемся починить обрезанный JSON
+                    # Закрываем незакрытую строку если есть
+                    if json_str.count('"') % 2 == 1:
+                        json_str += '"'
+                    # Закрываем массив matched_rows если не закрыт
+                    if '[' in json_str and json_str.count('[') > json_str.count(']'):
+                        json_str += ']'
+                    # Закрываем объект
+                    if json_str.count('{') > json_str.count('}'):
+                        # Добавляем минимальные поля если их нет
+                        if '"target_column"' not in json_str:
+                            json_str += ', "target_column": "Свидетельства"'
+                        if '"extracted_data"' not in json_str:
+                            json_str += ', "extracted_data": ""'
+                        json_str += '}'
+                    json_match = type('obj', (object,), {'group': lambda x: json_str})()
+
             if json_match:
                 try:
                     json_str = json_match.group(0)
@@ -1217,6 +1240,25 @@ class AuditProcessorApp:
             if not json_match:
                 # Пытаемся найти любой JSON объект
                 json_match = re.search(r'\{[^{}]*(?:\{[^{}]*\}[^{}]*)*\}', response)
+
+            # Если не нашли полный JSON, попробуем починить обрезанный
+            if not json_match:
+                partial_match = re.search(r'\{[\s\S]*?"data"\s*:\s*\{[\s\S]*', response)
+                if partial_match:
+                    json_str = partial_match.group(0)
+                    # Закрываем незакрытую строку
+                    if json_str.count('"') % 2 == 1:
+                        json_str += '"'
+                    # Закрываем внутренний объект data
+                    open_braces = json_str.count('{')
+                    close_braces = json_str.count('}')
+                    if open_braces > close_braces:
+                        # Добавляем explanation если его нет
+                        if '"explanation"' not in json_str:
+                            json_str += ', "explanation": "Частичный ответ"'
+                        # Закрываем все незакрытые скобки
+                        json_str += '}' * (open_braces - close_braces)
+                    json_match = type('obj', (object,), {'group': lambda x: json_str})()
 
             if json_match:
                 try:
