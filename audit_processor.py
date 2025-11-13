@@ -912,8 +912,15 @@ class AuditProcessorApp:
                         for row_num in matched_rows:
                             if row_num in table_rows:
                                 # Вставляем извлеченные данные в целевую колонку (БЕЗ названия файла)
+                                # Приоритет: Свидетельства, если target_column не найдена
+                                col_idx = None
                                 if target_column and target_column in header_positions:
                                     col_idx = header_positions[target_column]
+                                elif "Свидетельства" in header_positions:
+                                    col_idx = header_positions["Свидетельства"]
+                                    self.log(f"   ⚠️ Колонка '{target_column}' не найдена, использую 'Свидетельства'")
+
+                                if col_idx:
                                     # Добавляем к существующим данным (не перезаписываем)
                                     existing_value = ws.cell(row=row_num, column=col_idx).value
                                     if existing_value:
@@ -922,9 +929,9 @@ class AuditProcessorApp:
                                         new_value = extracted_data
 
                                     ws.cell(row=row_num, column=col_idx, value=new_value)
-                                    self.log(f"   ✓ Данные добавлены в строку {row_num}, колонка '{target_column}'")
+                                    self.log(f"   ✓ Данные добавлены в строку {row_num}, колонка 'Свидетельства'")
 
-                                # Добавляем объяснение С НАЗВАНИЕМ ФАЙЛА в колонку 4
+                                # ВСЕГДА добавляем объяснение С НАЗВАНИЕМ ФАЙЛА в колонку D (даже если данные не вставлены)
                                 ws.cell(row=row_num, column=explanation_col, value=f"Файл: {os.path.basename(file_path)}\n{explanation}")
 
                                 updated_rows.append(row_num)
