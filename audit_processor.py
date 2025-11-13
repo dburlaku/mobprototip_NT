@@ -703,10 +703,18 @@ class AuditProcessorApp:
 ТЕКСТ ИЗ ФОТО (ответ):
 {extracted_text[:800]}
 
-Исправь ошибки OCR. Найди 1-3 строки таблицы, где текст из фото подходит как ответ. Верни JSON:
-{{"matched_rows":[123],"target_column":"Свидетельства","extracted_data":"исправленный текст","explanation":"причина"}}
+Задача:
+1. Исправь ошибки OCR в тексте
+2. Найди 1-3 строки таблицы, где текст из фото является ОТВЕТОМ на вопрос строки
+3. Верни JSON в формате:
+{{"matched_rows":[номера строк],"target_column":"Свидетельства","extracted_data":"исправленный текст из фото","explanation":"почему эта строка подходит"}}
 
-ТОЛЬКО JSON!"""
+ВАЖНО:
+- matched_rows - массив ЧИСЕЛ (номера строк из таблицы выше)
+- extracted_data - ИСПРАВЛЕННЫЙ текст из фото (без ошибок OCR)
+- Если не нашел соответствия - верни {{"matched_rows":[]}}
+
+ТОЛЬКО JSON, БЕЗ пояснений!"""
             self.log(f"   Использую индекс строк (ускоренный режим)")
         else:
             # Без индекса - полный анализ (МЕДЛЕННО)
@@ -770,11 +778,19 @@ class AuditProcessorApp:
                     result = json.loads(json_str)
 
                     if "matched_rows" in result:
-                        matched_count = len(result.get('matched_rows', []))
+                        # Преобразуем все элементы в числа (AI может вернуть строки '26' вместо 26)
+                        rows_list = result['matched_rows']
+                        try:
+                            rows_list = [int(r) if isinstance(r, str) else r for r in rows_list]
+                            result['matched_rows'] = rows_list
+                        except (ValueError, TypeError) as e:
+                            self.log(f"   ⚠️ Ошибка преобразования номеров строк: {e}")
+                            return None
+
+                        matched_count = len(rows_list)
                         self.log(f"   ✓ AI определил соответствие с {matched_count} строками")
 
                         if matched_count > 0:
-                            rows_list = result['matched_rows']
                             self.log(f"     Строки: {rows_list}")
                             self.log(f"     Целевая колонка: {result.get('target_column', 'не указана')}")
 
@@ -911,6 +927,17 @@ class AuditProcessorApp:
 
                         for row_num in matched_rows:
                             if row_num in table_rows:
+                                # Проверяем что это не заголовок (те же критерии что в create_table_index)
+                                row_data = table_rows[row_num]
+                                row_text = " ".join([str(v).lower() for v in row_data.values()])
+                                header_keywords = ['элемент стандарта', 'пункты к проверке', 'комментарии:',
+                                                  'представитель', 'проверка дополнительных', 'критерий:', 'требования к см']
+                                is_header = len(row_text) < 50 or any(keyword in row_text for keyword in header_keywords)
+
+                                if is_header:
+                                    self.log(f"   ⚠️ Строка {row_num} является заголовком, пропускаем вставку")
+                                    continue
+
                                 # Вставляем извлеченные данные в целевую колонку (БЕЗ названия файла)
                                 # Приоритет: Свидетельства, если target_column не найдена
                                 col_idx = None
