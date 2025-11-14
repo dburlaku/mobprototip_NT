@@ -1413,52 +1413,106 @@ class AuditProcessorApp:
                 return f"Ошибка: {e}"
 
         elif file_ext in ['.jpg', '.jpeg', '.png', '.bmp']:
-            try:
-                import easyocr
-                import numpy as np
-                from PIL import Image
-
-                self.log("   🔍 Запуск OCR распознавания...")
-
-                # Проверка существования файла
-                if not os.path.exists(file_path):
-                    self.log(f"   ❌ Файл не найден: {file_path}")
-                    return "Ошибка: файл не найден"
-
-                # Попытка открыть изображение через PIL (работает с кириллицей)
+            # Используем Gemini Vision API для распознавания текста (НАМНОГО лучше чем EasyOCR!)
+            if self.ai_provider == "gemini" and self.gemini_client:
                 try:
+                    from PIL import Image
+
+                    self.log("   🔍 Запуск Gemini Vision OCR...")
+
+                    # Проверка существования файла
+                    if not os.path.exists(file_path):
+                        self.log(f"   ❌ Файл не найден: {file_path}")
+                        return "Ошибка: файл не найден"
+
+                    # Открываем изображение
+                    try:
+                        img = Image.open(file_path)
+                        self.log(f"   📷 Изображение загружено: {img.size[0]}x{img.size[1]} пикселей")
+                    except Exception as img_err:
+                        self.log(f"   ❌ Не удалось открыть изображение: {img_err}")
+                        return f"Ошибка: не удалось открыть изображение - {img_err}"
+
+                    # Отправляем изображение в Gemini Vision
+                    self.log("   ⏳ Gemini анализирует изображение...")
+
+                    prompt = """Извлеки весь текст с этого изображения.
+
+ВАЖНО:
+- Распознай ВЕСЬ текст максимально точно
+- Сохрани структуру документа (заголовки, параграфы)
+- Исправь явные ошибки если видишь
+- Верни ТОЛЬКО текст, без комментариев
+
+Текст с изображения:"""
+
+                    response = self.gemini_client.generate_content(
+                        [prompt, img],
+                        generation_config={"temperature": 0.1, "max_output_tokens": 8000}
+                    )
+
+                    # Извлекаем текст из ответа
+                    text = None
+                    if response.candidates and len(response.candidates) > 0:
+                        candidate = response.candidates[0]
+                        if candidate.content and candidate.content.parts:
+                            text = candidate.content.parts[0].text
+
+                    if not text:
+                        try:
+                            text = response.text
+                        except:
+                            pass
+
+                    if text and text.strip():
+                        self.log(f"   📝 Распознано {len(text)} символов (Gemini Vision)")
+                        return text
+                    else:
+                        self.log("   ⚠️ Gemini не распознал текст на изображении")
+                        return "(Текст не обнаружен на изображении)"
+
+                except Exception as e:
+                    self.log(f"   ❌ Ошибка Gemini Vision: {e}")
+                    import traceback
+                    self.log(f"   Подробности: {traceback.format_exc()[:300]}")
+                    return f"Ошибка OCR: {e}"
+
+            # Fallback: если Gemini недоступен, используем EasyOCR
+            else:
+                try:
+                    import easyocr
+                    import numpy as np
+                    from PIL import Image
+
+                    self.log("   🔍 Запуск EasyOCR (резервный режим)...")
+
+                    if not os.path.exists(file_path):
+                        self.log(f"   ❌ Файл не найден: {file_path}")
+                        return "Ошибка: файл не найден"
+
                     img = Image.open(file_path)
                     img_array = np.array(img)
                     self.log(f"   📷 Изображение загружено: {img.size[0]}x{img.size[1]} пикселей")
-                except Exception as img_err:
-                    self.log(f"   ❌ Не удалось открыть изображение: {img_err}")
-                    return f"Ошибка: не удалось открыть изображение - {img_err}"
 
-                self.log("   ⏳ Загрузка модели EasyOCR (первый запуск может занять время)...")
-                reader = easyocr.Reader(['ru', 'en'], gpu=False, verbose=False)
+                    self.log("   ⏳ Загрузка модели EasyOCR...")
+                    reader = easyocr.Reader(['ru', 'en'], gpu=False, verbose=False)
+                    result = reader.readtext(img_array, detail=0)
+                    text = "\n".join(result)
 
-                # Используем массив numpy вместо пути к файлу
-                result = reader.readtext(img_array, detail=0)
-                text = "\n".join(result)
+                    if text.strip():
+                        self.log(f"   📝 Распознано {len(text)} символов")
+                    else:
+                        self.log("   ⚠️ Текст не распознан")
+                        text = "(Текст не обнаружен на изображении)"
 
-                if text.strip():
-                    self.log(f"   📝 Распознано {len(text)} символов")
-                else:
-                    self.log("   ⚠️ Текст не распознан (пустое изображение или нет текста)")
-                    text = "(Текст не обнаружен на изображении)"
+                    return text
 
-                return text
-
-            except ImportError as ie:
-                self.log("   ⚠️ EasyOCR или зависимости не установлены")
-                self.log(f"   Детали: {ie}")
-                self.log("   Установите: pip install easyocr pillow")
-                return "⚠️ OCR недоступен: установите easyocr и pillow"
-            except Exception as e:
-                self.log(f"   ❌ Ошибка OCR: {e}")
-                import traceback
-                self.log(f"   Подробности: {traceback.format_exc()}")
-                return f"Ошибка OCR: {e}"
+                except ImportError:
+                    self.log("   ⚠️ EasyOCR не установлен, а Gemini недоступен")
+                    return "⚠️ OCR недоступен"
+                except Exception as e:
+                    self.log(f"   ❌ Ошибка OCR: {e}")
+                    return f"Ошибка OCR: {e}"
 
         return "Неподдерживаемый формат файла"
 
@@ -1472,9 +1526,9 @@ def main():
     print("=" * 70)
     print()
     print("Архитектура:")
-    print("  • OCR: EasyOCR (офлайн)")
+    print("  • OCR: Gemini Vision API (высокое качество)")
     print("  • Документы: python-docx, PyMuPDF")
-    print("  • Нейросеть: Ollama (локально)")
+    print("  • AI: Google Gemini (облако) / Ollama (локально)")
     print("  • Excel: openpyxl")
     print("  • GUI: tkinter")
     print()
