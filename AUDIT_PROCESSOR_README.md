@@ -40,11 +40,20 @@
 ## 📋 Требования
 
 ### Python библиотеки
+
+**Для Gemini (рекомендуется - лучший OCR):**
 ```bash
 pip install requests openpyxl pillow google-generativeai python-docx PyPDF2
 ```
 
-### Google Gemini API
+**Для Ollama (нужен дополнительно EasyOCR):**
+```bash
+pip install requests openpyxl pillow python-docx PyPDF2 easyocr
+```
+
+### Вариант 1: Google Gemini (рекомендуется)
+**Преимущества:** Лучший OCR, быстрее, точнее
+
 1. Получите API ключ: https://ai.google.dev/
 2. Вставьте в `config.json`:
 ```json
@@ -57,7 +66,12 @@ pip install requests openpyxl pillow google-generativeai python-docx PyPDF2
 }
 ```
 
-### Альтернатива: Ollama (локально)
+### Вариант 2: Ollama (локально, требует EasyOCR)
+**Преимущества:** Локально, бесплатно
+
+1. Установите Ollama и запустите модель
+2. Установите EasyOCR: `pip install easyocr`
+3. Создайте `config.json`:
 ```json
 {
   "ai_provider": "ollama",
@@ -66,6 +80,8 @@ pip install requests openpyxl pillow google-generativeai python-docx PyPDF2
   }
 }
 ```
+
+**Важно:** EasyOCR будет автоматически загружать модели при первом запуске (~500 MB).
 
 ## 🚀 Как использовать
 

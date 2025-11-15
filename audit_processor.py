@@ -751,6 +751,41 @@ class AuditProcessorApp:
         except Exception as e:
             return f"Ошибка: {e}"
 
+    def extract_text_with_easyocr(self, file_path):
+        """Альтернативный OCR через EasyOCR (для Ollama)"""
+        try:
+            import easyocr
+            self.log("   🔍 EasyOCR распознавание...")
+
+            # Создаем reader если еще не создан
+            if not hasattr(self, 'easyocr_reader'):
+                self.log("   ⏳ Инициализация EasyOCR (первый запуск может занять время)...")
+                self.easyocr_reader = easyocr.Reader(['ru', 'en'], gpu=False)
+
+            # Распознавание
+            result = self.easyocr_reader.readtext(file_path)
+
+            # Собираем текст
+            text_lines = [detection[1] for detection in result]
+            text = '\n'.join(text_lines)
+
+            if text.strip():
+                # Постобработка
+                text = self.post_processor.fix_ocr_errors(text)
+                self.log(f"   📝 Распознано: {len(text)} символов, {len(text_lines)} строк")
+                return text
+            else:
+                self.log("   ⚠️ Текст не распознан")
+                return "(Текст не найден)"
+
+        except ImportError:
+            self.log("   ⚠️ EasyOCR не установлен. Установите: pip install easyocr")
+            self.log("   💡 Или используйте Gemini для лучшего OCR")
+            return "EasyOCR не установлен"
+        except Exception as e:
+            self.log(f"   ❌ Ошибка EasyOCR: {e}")
+            return f"Ошибка: {e}"
+
     def extract_text_from_image(self, file_path):
         """Извлечение текста из изображения с улучшенным промптом"""
 
@@ -814,7 +849,9 @@ class AuditProcessorApp:
                 self.log(f"   ❌ Ошибка OCR: {e}")
                 return f"Ошибка: {e}"
 
-        return "OCR недоступен"
+        # Приоритет 2: EasyOCR (fallback для Ollama)
+        self.log("   ℹ️ Gemini недоступен, используем EasyOCR...")
+        return self.extract_text_with_easyocr(file_path)
 
     def extract_text_from_document(self, file_path):
         """Извлечение текста из DOC/DOCX/PDF документов"""
