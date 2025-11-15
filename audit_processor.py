@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 """
 Автоматическое заполнение таблиц аудита - УЛУЧШЕННАЯ ВЕРСИЯ v2.3
-Использует локальную нейросеть Ollama или Google Gemini для обработки документов
+Использует Google Gemini Vision API для обработки документов
 
 УЛУЧШЕНИЯ:
 ✅ Полное распознавание текста (не обрывается)
@@ -335,71 +335,42 @@ class AuditProcessorApp:
                     self.config = json.load(f)
                 print(f"✅ Конфигурация загружена из {config_path}")
             except Exception as e:
-                print(f"⚠️ Ошибка загрузки config.json: {e}")
-                self.config = {"ai_provider": "ollama"}
+                print(f"❌ Ошибка загрузки config.json: {e}")
+                self.config = {"ai_provider": "gemini"}
         else:
-            print("ℹ️ config.json не найден, используется Ollama по умолчанию")
-            self.config = {"ai_provider": "ollama"}
+            print("❌ config.json не найден! Создайте config.json с Google Gemini API ключом")
+            self.config = {"ai_provider": "gemini"}
 
     def init_ai_provider(self):
-        """Инициализация AI провайдера"""
-        self.ai_provider = self.config.get("ai_provider", "ollama")
+        """Инициализация Google Gemini Vision API"""
+        self.ai_provider = "gemini"
 
-        if self.ai_provider == "gemini":
-            # Google Gemini
-            gemini_config = self.config.get("gemini", {})
-            self.gemini_api_key = gemini_config.get("api_key")
-            self.gemini_model = gemini_config.get("model", "gemini-1.5-flash")
+        # Google Gemini
+        gemini_config = self.config.get("gemini", {})
+        self.gemini_api_key = gemini_config.get("api_key")
+        self.gemini_model = gemini_config.get("model", "gemini-1.5-flash")
 
-            if self.gemini_api_key:
-                try:
-                    import google.generativeai as genai
-                    genai.configure(api_key=self.gemini_api_key)
-                    model_name = self.gemini_model.replace("models/", "")
-                    self.gemini_client = genai.GenerativeModel(model_name)
-                    self.ai_available = True
-                    print(f"✅ Google Gemini подключен ({model_name})")
-                    print("🎉 Обработка будет быстрой и качественной!")
-                except Exception as e:
-                    print(f"❌ Ошибка подключения Gemini: {e}")
-                    self.ai_available = False
-            else:
-                print("❌ API ключ Gemini не найден в config.json")
+        if self.gemini_api_key:
+            try:
+                import google.generativeai as genai
+                genai.configure(api_key=self.gemini_api_key)
+                model_name = self.gemini_model.replace("models/", "")
+                self.gemini_client = genai.GenerativeModel(model_name)
+                self.ai_available = True
+                print(f"✅ Google Gemini подключен ({model_name})")
+                print("🎉 Обработка будет быстрой и качественной!")
+            except Exception as e:
+                error_msg = str(e)
+                print(f"❌ Ошибка подключения Gemini: {error_msg}")
+                # Проверяем на ошибки лимитов API
+                if "quota" in error_msg.lower() or "limit" in error_msg.lower():
+                    print("⚠️ Возможно исчерпан лимит API Gemini. Проверьте квоту на https://aistudio.google.com")
                 self.ai_available = False
         else:
-            # Ollama
-            self.ollama_available = self.check_ollama()
-            self.ai_available = self.ollama_available
-
-            if self.check_model_available("llama3.2:1b"):
-                self.model_name = "llama3.2:1b"
-                print("✅ Используется быстрая модель llama3.2:1b")
-            else:
-                self.model_name = "llama3.2:latest"
-                print("ℹ️ Используется стандартная модель llama3.2:latest")
-
-    def check_ollama(self):
-        """Проверка доступности Ollama"""
-        try:
-            response = requests.get("http://localhost:11434/api/tags", timeout=2)
-            if response.status_code == 200:
-                models = response.json().get('models', [])
-                print(f"✅ Ollama запущен. Найдено моделей: {len(models)}")
-                return True
-            return False
-        except requests.exceptions.RequestException:
-            return False
-
-    def check_model_available(self, model_name):
-        """Проверка доступности конкретной модели"""
-        try:
-            response = requests.get("http://localhost:11434/api/tags", timeout=2)
-            if response.status_code == 200:
-                models = response.json().get('models', [])
-                return any(model_name in model.get('name', '') for model in models)
-            return False
-        except:
-            return False
+            print("❌ API ключ Gemini не найден в config.json")
+            print("💡 Добавьте в config.json:")
+            print('   {"ai_provider": "gemini", "gemini": {"api_key": "YOUR_KEY", "model": "gemini-1.5-flash"}}')
+            self.ai_available = False
 
     def setup_ui(self):
         """Создание интерфейса"""
@@ -425,12 +396,8 @@ class AuditProcessorApp:
         status_frame = tk.Frame(main_container, bg="white", relief=tk.RAISED, borderwidth=1)
         status_frame.pack(fill=tk.X, pady=(0, 15))
 
-        if self.ai_provider == "gemini":
-            status_color = "#27ae60" if self.ai_available else "#e74c3c"
-            status_text = f"✅ Google Gemini ({self.gemini_model})" if self.ai_available else "❌ Gemini не подключен"
-        else:
-            status_color = "#27ae60" if self.ai_available else "#e74c3c"
-            status_text = "✅ Ollama подключен" if self.ai_available else "❌ Ollama не подключен"
+        status_color = "#27ae60" if self.ai_available else "#e74c3c"
+        status_text = f"✅ Google Gemini ({self.gemini_model})" if self.ai_available else "❌ Gemini не подключен"
 
         status_label = tk.Label(
             status_frame,
@@ -575,12 +542,10 @@ class AuditProcessorApp:
         self.log("")
 
         if self.ai_available:
-            if self.ai_provider == "gemini":
-                self.log(f"✅ Google Gemini готов ({self.gemini_model})")
-            else:
-                self.log("✅ Ollama готов к работе")
+            self.log(f"✅ Google Gemini готов ({self.gemini_model})")
         else:
-            self.log("❌ ВНИМАНИЕ: AI не подключен!")
+            self.log("❌ ВНИМАНИЕ: Google Gemini не подключен!")
+            self.log("💡 Проверьте config.json и API ключ")
 
         self.log("")
 
@@ -695,116 +660,60 @@ class AuditProcessorApp:
                 messagebox.showerror("Ошибка", f"Не удалось открыть:\n{e}")
 
     def query_ai(self, prompt, context=""):
-        """Запрос к AI (Gemini или Ollama)"""
+        """Запрос к Google Gemini"""
         full_prompt = f"{context}\n\n{prompt}" if context else prompt
 
-        if self.ai_provider == "gemini":
-            try:
-                response = self.gemini_client.generate_content(
-                    full_prompt,
-                    generation_config={
-                        "temperature": 0.1,
-                        "max_output_tokens": 8192,  # Увеличен лимит
-                    },
-                    safety_settings=[
-                        {"category": cat, "threshold": "BLOCK_NONE"}
-                        for cat in ["HARM_CATEGORY_HARASSMENT", "HARM_CATEGORY_HATE_SPEECH",
-                                   "HARM_CATEGORY_SEXUALLY_EXPLICIT", "HARM_CATEGORY_DANGEROUS_CONTENT"]
-                    ]
-                )
-
-                if response.candidates and len(response.candidates) > 0:
-                    candidate = response.candidates[0]
-
-                    if candidate.content and candidate.content.parts:
-                        return candidate.content.parts[0].text
-
-                    try:
-                        return response.text
-                    except:
-                        return "Ошибка: пустой ответ Gemini"
-
-                return "Ошибка: нет кандидатов ответа"
-
-            except Exception as e:
-                return f"Ошибка Gemini: {e}"
-
-        # Ollama
-        url = "http://localhost:11434/api/generate"
-        payload = {
-            "model": self.model_name,
-            "prompt": full_prompt,
-            "stream": False,
-            "options": {
-                "temperature": 0.1,
-                "num_predict": 500,  # Увеличен лимит
-                "top_k": 10,
-                "top_p": 0.9
-            }
-        }
-
         try:
-            response = requests.post(url, json=payload, timeout=300)
-            if response.status_code == 200:
-                return response.json().get('response', '')
-            return f"Ошибка: {response.status_code}"
+            response = self.gemini_client.generate_content(
+                full_prompt,
+                generation_config={
+                    "temperature": 0.1,
+                    "max_output_tokens": 8192,  # Увеличен лимит
+                },
+                safety_settings=[
+                    {"category": cat, "threshold": "BLOCK_NONE"}
+                    for cat in ["HARM_CATEGORY_HARASSMENT", "HARM_CATEGORY_HATE_SPEECH",
+                               "HARM_CATEGORY_SEXUALLY_EXPLICIT", "HARM_CATEGORY_DANGEROUS_CONTENT"]
+                ]
+            )
+
+            if response.candidates and len(response.candidates) > 0:
+                candidate = response.candidates[0]
+
+                if candidate.content and candidate.content.parts:
+                    return candidate.content.parts[0].text
+
+                try:
+                    return response.text
+                except:
+                    return "Ошибка: пустой ответ Gemini"
+
+            return "Ошибка: нет кандидатов ответа"
+
         except Exception as e:
-            return f"Ошибка: {e}"
-
-    def extract_text_with_easyocr(self, file_path):
-        """Альтернативный OCR через EasyOCR (для Ollama)"""
-        try:
-            import easyocr
-            self.log("   🔍 EasyOCR распознавание...")
-
-            # Создаем reader если еще не создан
-            if not hasattr(self, 'easyocr_reader'):
-                self.log("   ⏳ Инициализация EasyOCR (первый запуск может занять время)...")
-                self.easyocr_reader = easyocr.Reader(['ru', 'en'], gpu=False)
-
-            # Распознавание
-            result = self.easyocr_reader.readtext(file_path)
-
-            # Собираем текст
-            text_lines = [detection[1] for detection in result]
-            text = '\n'.join(text_lines)
-
-            if text.strip():
-                # Постобработка
-                text = self.post_processor.fix_ocr_errors(text)
-                self.log(f"   📝 Распознано: {len(text)} символов, {len(text_lines)} строк")
-                return text
-            else:
-                self.log("   ⚠️ Текст не распознан")
-                return "(Текст не найден)"
-
-        except ImportError:
-            self.log("   ⚠️ EasyOCR не установлен. Установите: pip install easyocr")
-            self.log("   💡 Или используйте Gemini для лучшего OCR")
-            return "EasyOCR не установлен"
-        except Exception as e:
-            self.log(f"   ❌ Ошибка EasyOCR: {e}")
-            return f"Ошибка: {e}"
+            error_msg = str(e)
+            # Проверяем на ошибки лимитов API
+            if "quota" in error_msg.lower() or "limit" in error_msg.lower() or "429" in error_msg:
+                return "Ошибка: Исчерпан лимит API Gemini. Проверьте квоту на https://aistudio.google.com"
+            return f"Ошибка Gemini: {error_msg}"
 
     def extract_text_from_image(self, file_path):
-        """Извлечение текста из изображения с улучшенным промптом"""
+        """Извлечение текста из изображения через Gemini Vision API"""
+        try:
+            from PIL import Image
 
-        if self.ai_provider == "gemini" and self.gemini_client:
-            try:
-                from PIL import Image
+            self.log("   🔍 Gemini Vision OCR...")
 
-                self.log("   🔍 Gemini Vision OCR...")
+            img = Image.open(file_path)
+            self.log(f"   📷 Размер: {img.size[0]}x{img.size[1]}px")
 
-                img = Image.open(file_path)
-                self.log(f"   📷 Размер: {img.size[0]}x{img.size[1]}px")
-
-                # УЛУЧШЕННЫЙ ПРОМПТ для полного распознавания
-                prompt = """Ты - эксперт OCR. Твоя задача - извлечь ВЕСЬ текст с изображения БЕЗ ИСКЛЮЧЕНИЙ.
+            # УЛУЧШЕННЫЙ ПРОМПТ для полного распознавания
+            prompt = """Ты - эксперт OCR. Твоя задача - извлечь ВЕСЬ текст с изображения БЕЗ ИСКЛЮЧЕНИЙ.
 
 КРИТИЧЕСКИ ВАЖНО:
 1. Распознай КАЖДОЕ слово, КАЖДУЮ букву
 2. НЕ ПРОПУСКАЙ ни одной строки
-3. Сохрани ВСЕЗАГОЛОВКИ, параграфы, списки
+3. Сохрани ВСЕ заголовки, параграфы, списки
 4. Читай ДО САМОГО КОНЦА документа
 5. Если видишь таблицу - распознай все ячейки
 6. Если текст на нескольких страницах - распознай ВСЕ страницы
@@ -816,42 +725,43 @@ class AuditProcessorApp:
 
 НАЧИНАЙ РАСПОЗНАВАНИЕ:"""
 
-                response = self.gemini_client.generate_content(
-                    [prompt, img],
-                    generation_config={
-                        "temperature": 0.1,
-                        "max_output_tokens": 8192  # Максимум для полного текста
-                    }
-                )
+            response = self.gemini_client.generate_content(
+                [prompt, img],
+                generation_config={
+                    "temperature": 0.1,
+                    "max_output_tokens": 8192  # Максимум для полного текста
+                }
+            )
 
-                text = None
-                if response.candidates and len(response.candidates) > 0:
-                    candidate = response.candidates[0]
-                    if candidate.content and candidate.content.parts:
-                        text = candidate.content.parts[0].text
+            text = None
+            if response.candidates and len(response.candidates) > 0:
+                candidate = response.candidates[0]
+                if candidate.content and candidate.content.parts:
+                    text = candidate.content.parts[0].text
 
-                if not text:
-                    try:
-                        text = response.text
-                    except:
-                        pass
+            if not text:
+                try:
+                    text = response.text
+                except:
+                    pass
 
-                if text and text.strip():
-                    # Постобработка
-                    text = self.post_processor.fix_ocr_errors(text)
-                    self.log(f"   📝 Распознано: {len(text)} символов")
-                    return text
-                else:
-                    self.log("   ⚠️ Текст не распознан")
-                    return "(Текст не найден)"
+            if text and text.strip():
+                # Постобработка
+                text = self.post_processor.fix_ocr_errors(text)
+                self.log(f"   📝 Распознано: {len(text)} символов")
+                return text
+            else:
+                self.log("   ⚠️ Текст не распознан")
+                return "(Текст не найден)"
 
-            except Exception as e:
-                self.log(f"   ❌ Ошибка OCR: {e}")
-                return f"Ошибка: {e}"
-
-        # Приоритет 2: EasyOCR (fallback для Ollama)
-        self.log("   ℹ️ Gemini недоступен, используем EasyOCR...")
-        return self.extract_text_with_easyocr(file_path)
+        except Exception as e:
+            error_msg = str(e)
+            self.log(f"   ❌ Ошибка OCR: {error_msg}")
+            # Проверяем на ошибки лимитов API
+            if "quota" in error_msg.lower() or "limit" in error_msg.lower() or "429" in error_msg:
+                self.log("   ⚠️ Возможно исчерпан лимит API Gemini")
+                return "OCR недоступен (лимит API)"
+            return f"Ошибка OCR: {error_msg}"
 
     def extract_text_from_document(self, file_path):
         """Извлечение текста из DOC/DOCX/PDF документов"""
