@@ -1046,6 +1046,334 @@ function editMetadata(button) {
     }
 }
 
+// ===== OCR ФУНКЦИОНАЛ =====
+
+// Глобальный экземпляр OCR
+let documentOCR = null;
+
+// Список тестовых вопросов
+const testQuestions = [
+    'Есть ли свидетельства, подтверждающие планирование действий по внесению изменений в систему/проект/изделие?',
+    'Приведите свидетельство выполнения ТО/ремонта оборудования.',
+    'Как документируется информация о выполненных ТО/ремонтах?',
+    'Доводится ли план действий при сбойных ситуациях до сведения персонала?',
+    'Какими документами подтверждается обеспечение характеристик сварочных материалов?',
+    'Какие документы определяют структуру, функционал, полномочия лаборатории?',
+    'Проводит ли организация анализ изменений в процессы производства продукции?',
+    'Какими методами Организация получает и анализирует информацию об удовлетворенности потребителей?'
+];
+
+// Показать экран распознавания документов
+function showDocumentOCR() {
+    toggleMenu();
+    showScreen('documentOCR');
+
+    // Инициализировать OCR если еще не создан
+    if (!documentOCR) {
+        documentOCR = new DocumentOCR();
+    }
+
+    // Загрузить панель вопросов
+    loadQuestionsPanel();
+}
+
+// Загрузить панель с вопросами
+function loadQuestionsPanel() {
+    const panel = document.getElementById('questionsPanel');
+    const questionsList = document.getElementById('questionsList');
+
+    if (!questionsList) return;
+
+    questionsList.innerHTML = '';
+
+    testQuestions.forEach((question, index) => {
+        const questionDiv = document.createElement('div');
+        questionDiv.className = 'question-item';
+        questionDiv.innerHTML = `
+            <label>
+                <input type="checkbox" class="question-checkbox" data-question="${question}" checked>
+                <span class="question-text">${index + 1}. ${question}</span>
+            </label>
+        `;
+        questionsList.appendChild(questionDiv);
+    });
+
+    panel.style.display = 'block';
+}
+
+// Обработка загрузки OCR файла
+async function handleOCRUpload(event) {
+    const files = event.target.files;
+    if (files.length === 0) return;
+
+    // Инициализировать OCR если нужно
+    if (!documentOCR) {
+        documentOCR = new DocumentOCR();
+    }
+
+    // Обработать каждый файл
+    for (let i = 0; i < files.length; i++) {
+        const file = files[i];
+
+        try {
+            console.log('Обработка файла:', file.name);
+
+            // Распознать документ
+            const document = await documentOCR.recognizeDocument(file);
+
+            // Добавить в список распознанных документов
+            addRecognizedDocumentToList(document);
+
+        } catch (error) {
+            console.error('Ошибка при обработке файла:', file.name, error);
+            alert(`Ошибка при обработке файла ${file.name}: ${error.message}`);
+        }
+    }
+
+    // Очистить input для возможности повторной загрузки того же файла
+    event.target.value = '';
+}
+
+// Добавить распознанный документ в список
+function addRecognizedDocumentToList(document) {
+    const list = document.getElementById('recognizedDocumentsList');
+    if (!list) return;
+
+    const docDiv = document.createElement('div');
+    docDiv.className = 'document-card';
+    docDiv.innerHTML = `
+        <div class="document-header">
+            <h4>📄 ${document.fileName}</h4>
+            <span class="confidence-badge">${Math.round(document.confidence)}% уверенности</span>
+        </div>
+
+        <div class="document-metadata">
+            ${document.metadata.organization ? `<p><strong>Организация:</strong> ${document.metadata.organization}</p>` : ''}
+            ${document.metadata.docType ? `<p><strong>Тип:</strong> ${document.metadata.docType}</p>` : ''}
+            ${document.metadata.docNumber ? `<p><strong>Номер:</strong> ${document.metadata.docNumber}</p>` : ''}
+            ${document.metadata.docDate ? `<p><strong>Дата:</strong> ${document.metadata.docDate}</p>` : ''}
+            ${document.metadata.persons.length > 0 ? `<p><strong>Лица:</strong> ${document.metadata.persons.join(', ')}</p>` : ''}
+            ${document.metadata.keywords.length > 0 ? `<p><strong>Ключевые слова:</strong> ${document.metadata.keywords.join(', ')}</p>` : ''}
+        </div>
+
+        <div class="document-text">
+            <details>
+                <summary>Распознанный текст (${document.processedText.length} символов)</summary>
+                <div class="text-content">${document.processedText}</div>
+            </details>
+        </div>
+
+        <div class="document-actions">
+            <button class="secondary-button" onclick="viewDocumentDetails(${document.id})">Подробнее</button>
+            <button class="secondary-button" onclick="copyDocumentText(${document.id})">Копировать текст</button>
+        </div>
+    `;
+
+    list.appendChild(docDiv);
+}
+
+// Просмотр деталей документа
+function viewDocumentDetails(documentId) {
+    if (!documentOCR) return;
+
+    const documents = documentOCR.getRecognizedDocuments();
+    const document = documents.find(d => d.id === documentId);
+
+    if (!document) {
+        alert('Документ не найден');
+        return;
+    }
+
+    // Создать модальное окно с деталями
+    const modal = document.createElement('div');
+    modal.className = 'modal-overlay';
+    modal.innerHTML = `
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>Детали документа</h3>
+                <button class="close-button" onclick="this.closest('.modal-overlay').remove()">✕</button>
+            </div>
+            <div class="modal-body">
+                <h4>${document.fileName}</h4>
+                <p><strong>Уверенность распознавания:</strong> ${Math.round(document.confidence)}%</p>
+                <h5>Метаданные:</h5>
+                <pre>${JSON.stringify(document.metadata, null, 2)}</pre>
+                <h5>Полный текст:</h5>
+                <div class="scrollable-text">${document.processedText}</div>
+            </div>
+        </div>
+    `;
+
+    document.body.appendChild(modal);
+}
+
+// Копировать текст документа
+function copyDocumentText(documentId) {
+    if (!documentOCR) return;
+
+    const documents = documentOCR.getRecognizedDocuments();
+    const document = documents.find(d => d.id === documentId);
+
+    if (!document) {
+        alert('Документ не найден');
+        return;
+    }
+
+    // Копировать в буфер обмена
+    navigator.clipboard.writeText(document.processedText).then(() => {
+        alert('Текст скопирован в буфер обмена!');
+    }).catch(err => {
+        console.error('Ошибка при копировании:', err);
+        alert('Не удалось скопировать текст');
+    });
+}
+
+// Анализ документов с вопросами
+async function analyzeDocuments() {
+    if (!documentOCR) {
+        alert('Сначала загрузите документы');
+        return;
+    }
+
+    const documents = documentOCR.getRecognizedDocuments();
+    if (documents.length === 0) {
+        alert('Нет загруженных документов для анализа');
+        return;
+    }
+
+    // Получить выбранные вопросы
+    const checkboxes = document.querySelectorAll('.question-checkbox:checked');
+    const selectedQuestions = Array.from(checkboxes).map(cb => cb.dataset.question);
+
+    if (selectedQuestions.length === 0) {
+        alert('Выберите хотя бы один вопрос');
+        return;
+    }
+
+    // Показать индикатор загрузки
+    const resultsDiv = document.getElementById('matchResults');
+    resultsDiv.innerHTML = '<div class="loading">Анализ документов...</div>';
+    resultsDiv.style.display = 'block';
+
+    // Собрать все совпадения
+    const allMatches = [];
+
+    for (const document of documents) {
+        const matches = await documentOCR.matchQuestionsToDocument(document, selectedQuestions);
+        allMatches.push(...matches);
+    }
+
+    // Группировать по вопросам
+    const groupedMatches = {};
+    for (const match of allMatches) {
+        if (!groupedMatches[match.question]) {
+            groupedMatches[match.question] = [];
+        }
+        groupedMatches[match.question].push(match);
+    }
+
+    // Отобразить результаты
+    displayAnalysisResults(groupedMatches);
+}
+
+// Отобразить результаты анализа
+function displayAnalysisResults(groupedMatches) {
+    const resultsDiv = document.getElementById('matchResults');
+    resultsDiv.innerHTML = '';
+
+    if (Object.keys(groupedMatches).length === 0) {
+        resultsDiv.innerHTML = '<div class="no-results">Не найдено совпадений</div>';
+        return;
+    }
+
+    const resultsHTML = `
+        <div class="results-header">
+            <h3>Результаты анализа</h3>
+            <p>Найдено ответов на ${Object.keys(groupedMatches).length} вопросов</p>
+        </div>
+        <div class="results-list">
+            ${Object.entries(groupedMatches).map(([question, matches]) => `
+                <div class="result-item">
+                    <div class="result-question">
+                        <strong>❓ ${question}</strong>
+                    </div>
+                    <div class="result-answers">
+                        ${matches.map(match => `
+                            <div class="answer-card" style="border-left: 3px solid ${getColorByScore(match.relevanceScore)};">
+                                <div class="answer-meta">
+                                    <span class="file-name">📄 ${match.source.fileName}</span>
+                                    <span class="relevance-score">Релевантность: ${Math.round(match.relevanceScore * 100)}%</span>
+                                </div>
+                                <div class="answer-text">
+                                    ${match.answer}
+                                </div>
+                            </div>
+                        `).join('')}
+                    </div>
+                </div>
+            `).join('')}
+        </div>
+        <div class="results-actions">
+            <button class="primary-button" onclick="exportResults()">Экспортировать результаты</button>
+            <button class="secondary-button" onclick="clearResults()">Очистить</button>
+        </div>
+    `;
+
+    resultsDiv.innerHTML = resultsHTML;
+}
+
+// Получить цвет по баллу релевантности
+function getColorByScore(score) {
+    if (score >= 0.7) return '#4caf50'; // Зеленый
+    if (score >= 0.5) return '#ff9800'; // Оранжевый
+    return '#f44336'; // Красный
+}
+
+// Экспорт результатов
+function exportResults() {
+    if (!documentOCR) return;
+
+    const documents = documentOCR.getRecognizedDocuments();
+    const exportData = {
+        timestamp: new Date().toISOString(),
+        documents: documents.map(doc => ({
+            fileName: doc.fileName,
+            confidence: doc.confidence,
+            text: doc.processedText,
+            metadata: doc.metadata
+        })),
+        questions: testQuestions
+    };
+
+    // Скачать как JSON
+    const blob = new Blob([JSON.stringify(exportData, null, 2)], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `ocr-results-${Date.now()}.json`;
+    a.click();
+    URL.revokeObjectURL(url);
+
+    alert('Результаты экспортированы!');
+}
+
+// Очистить результаты
+function clearResults() {
+    const resultsDiv = document.getElementById('matchResults');
+    const documentsList = document.getElementById('recognizedDocumentsList');
+
+    if (confirm('Очистить все результаты и документы?')) {
+        resultsDiv.innerHTML = '';
+        documentsList.innerHTML = '';
+
+        if (documentOCR) {
+            documentOCR.recognizedDocuments = [];
+        }
+    }
+}
+
+// ===== КОНЕЦ OCR ФУНКЦИОНАЛА =====
+
 // Экспортировать функции для тестирования
 window.nadiDebug = {
     showScreen,
@@ -1054,5 +1382,6 @@ window.nadiDebug = {
     showNewSplash,
     hideNewSplash,
     navigateStory,
-    updateStoryDisplay
+    updateStoryDisplay,
+    documentOCR: () => documentOCR
 };
