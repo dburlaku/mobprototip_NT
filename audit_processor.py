@@ -219,6 +219,33 @@ class TextPostProcessor:
         return 'unknown'
 
     @staticmethod
+    def smart_truncate(text, max_length=500):
+        """
+        Умное обрезание текста с сохранением целостности предложений
+
+        Пытается обрезать на конце предложения (. ! ?) или на границе слова
+        """
+        if len(text) <= max_length:
+            return text
+
+        # Пытаемся найти конец предложения в пределах max_length
+        truncated = text[:max_length]
+
+        # Ищем последнюю точку, восклицательный или вопросительный знак
+        for end_char in ['. ', '! ', '? ']:
+            last_pos = truncated.rfind(end_char)
+            if last_pos > max_length * 0.5:  # Хотя бы половина текста должна остаться
+                return truncated[:last_pos + 1].strip()
+
+        # Если не нашли конец предложения, обрезаем на границе слова
+        last_space = truncated.rfind(' ')
+        if last_space > 0:
+            return truncated[:last_space].strip() + '...'
+
+        # В крайнем случае просто обрезаем
+        return truncated.strip() + '...'
+
+    @staticmethod
     def extract_relevant_fragment(text, doc_type, metadata):
         """
         Извлекает только нужный фрагмент документа в соответствии с правилами:
@@ -232,9 +259,10 @@ class TextPostProcessor:
             parts = []
 
             # Тема обучения (ищем после "программе:")
-            theme_match = re.search(r'программе[:\s]+[«"]?([^»"\n]{10,200})[»"]?', text, re.IGNORECASE)
+            theme_match = re.search(r'программе[:\s]+[«"]?([^»"\n]+?)[»"\n]', text, re.IGNORECASE)
             if theme_match:
-                parts.append(f"Тема: {theme_match.group(1).strip()}")
+                theme = TextPostProcessor.smart_truncate(theme_match.group(1).strip(), 300)
+                parts.append(f"Тема: {theme}")
 
             # Даты обучения
             dates = re.findall(r'(\d{2}\.\d{2}\.\d{4})', text)
@@ -266,10 +294,11 @@ class TextPostProcessor:
             if metadata.get('doc_date'):
                 parts.append(f"от {metadata['doc_date']}")
 
-            # Название (ищем после "О " или "Об ")
-            title_match = re.search(r'(?:О|Об)\s+([^\n]{10,200})', text)
+            # Название (ищем после "О " или "Об " до точки или конца абзаца)
+            title_match = re.search(r'(?:О|Об)\s+([^\n]+?)(?:\.|$)', text, re.IGNORECASE)
             if title_match:
-                parts.append(f"Название: {title_match.group(0).strip()}")
+                title = TextPostProcessor.smart_truncate(title_match.group(0).strip(), 400)
+                parts.append(f"Название: {title}")
 
             return '\n'.join(parts) if parts else text[:300]
 
@@ -277,10 +306,11 @@ class TextPostProcessor:
             # План/График
             parts = []
 
-            # Название плана/графика
-            title_match = re.search(r'(?:график|план)[:\s]+([^\n]{10,200})', text, re.IGNORECASE)
+            # Название плана/графика (ищем до точки или конца строки)
+            title_match = re.search(r'(?:график|план)[:\s]+([^\n]+?)(?:\.|$)', text, re.IGNORECASE)
             if title_match:
-                parts.append(f"Название: {title_match.group(0).strip()}")
+                title = TextPostProcessor.smart_truncate(title_match.group(0).strip(), 400)
+                parts.append(f"Название: {title}")
 
             # Дата утверждения
             if metadata.get('doc_date'):
