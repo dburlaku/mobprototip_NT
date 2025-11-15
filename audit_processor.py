@@ -902,10 +902,14 @@ JSON:"""
         try:
             response = self.query_ai(prompt)
 
+            # ОТЛАДКА: Показываем ответ AI
+            self.log(f"   🤖 Ответ AI (первые 300 символов): {response[:300]}")
+
             # Извлекаем JSON
             json_match = re.search(r'\{[\s\S]*?"matched_rows"[\s\S]*?\}', response)
 
             if json_match:
+                self.log(f"   ✓ JSON найден в ответе")
                 try:
                     result = json.loads(json_match.group(0))
 
@@ -925,14 +929,19 @@ JSON:"""
                             "source_file": source_file  # Имя файла-источника
                         }
 
-                except json.JSONDecodeError:
-                    pass
+                except json.JSONDecodeError as je:
+                    self.log(f"   ⚠️ Ошибка парсинга JSON: {je}")
+                    self.log(f"   JSON строка: {json_match.group(0)[:200]}")
+            else:
+                self.log("   ⚠️ JSON не найден в ответе AI")
 
             self.log("   ⚠️ AI не нашел соответствий")
             return None
 
         except Exception as e:
             self.log(f"   ❌ Ошибка: {e}")
+            import traceback
+            self.log(f"   Traceback: {traceback.format_exc()[:300]}")
             return None
 
     def start_processing(self):
