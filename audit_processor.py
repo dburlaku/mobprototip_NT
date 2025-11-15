@@ -677,24 +677,46 @@ class AuditProcessorApp:
                 ]
             )
 
+            # ДЕТАЛЬНОЕ ЛОГИРОВАНИЕ для диагностики
             if response.candidates and len(response.candidates) > 0:
                 candidate = response.candidates[0]
+
+                # Проверяем finish_reason
+                if hasattr(candidate, 'finish_reason'):
+                    finish_reason = str(candidate.finish_reason)
+                    if 'SAFETY' in finish_reason:
+                        self.log(f"   ⚠️ Ответ заблокирован safety filters: {finish_reason}")
+                        # Пытаемся получить safety_ratings
+                        if hasattr(candidate, 'safety_ratings'):
+                            self.log(f"   Safety ratings: {candidate.safety_ratings}")
+                        return "Ошибка: Ответ заблокирован safety filters Gemini"
 
                 if candidate.content and candidate.content.parts:
                     return candidate.content.parts[0].text
 
+                # Если нет parts, пытаемся получить через response.text
                 try:
-                    return response.text
-                except:
-                    return "Ошибка: пустой ответ Gemini"
+                    if response.text:
+                        return response.text
+                except Exception as e:
+                    self.log(f"   ⚠️ Не удалось получить response.text: {e}")
+                    # Логируем детали candidate
+                    self.log(f"   Candidate finish_reason: {getattr(candidate, 'finish_reason', 'нет')}")
+                    self.log(f"   Candidate content: {getattr(candidate, 'content', 'нет')}")
+                    return "Ошибка: пустой ответ Gemini (нет parts)"
 
-            return "Ошибка: нет кандидатов ответа"
+            # Если нет candidates
+            self.log(f"   ⚠️ Нет candidates в ответе")
+            if hasattr(response, 'prompt_feedback'):
+                self.log(f"   Prompt feedback: {response.prompt_feedback}")
+            return "Ошибка: нет кандидатов ответа (возможно, промпт заблокирован)"
 
         except Exception as e:
             error_msg = str(e)
             # Проверяем на ошибки лимитов API
             if "quota" in error_msg.lower() or "limit" in error_msg.lower() or "429" in error_msg:
                 return "Ошибка: Исчерпан лимит API Gemini. Проверьте квоту на https://aistudio.google.com"
+            self.log(f"   ❌ Исключение в query_ai: {error_msg}")
             return f"Ошибка Gemini: {error_msg}"
 
     def extract_text_from_image(self, file_path):
