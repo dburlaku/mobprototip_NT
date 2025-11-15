@@ -1,0 +1,17 @@
+{
+  "ai_provider": "ollama",
+  "ollama": {
+    "model": "llama3.2:latest",
+    "url": "http://localhost:11434"
+  },
+  "openai": {
+    "api_key": "YOUR_OPENAI_API_KEY_HERE",
+    "model": "gpt-4o-mini",
+    "base_url": "https://api.openai.com/v1"
+  },
+  "anthropic": {
+    "api_key": "YOUR_ANTHROPIC_API_KEY_HERE",
+    "model": "claude-3-5-sonnet-20241022",
+    "base_url": "https://api.anthropic.com/v1"
+  }
+}
