@@ -1,0 +1,35 @@
+# Audit Processor - конфиденциальные файлы
+config.json
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+*.egg-info/
+dist/
+build/
+
+# Virtual environments
+venv/
+env/
+ENV/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Временные файлы Excel
+~$*.xlsx
+~$*.xls
+*.tmp
+
+# Логи
+*.log
