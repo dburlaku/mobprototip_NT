@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-Автоматическое заполнение таблиц аудита - УЛУЧШЕННАЯ ВЕРСИЯ v2.2
+Автоматическое заполнение таблиц аудита - УЛУЧШЕННАЯ ВЕРСИЯ v2.3
 Использует локальную нейросеть Ollama или Google Gemini для обработки документов
 
 УЛУЧШЕНИЯ:
@@ -12,6 +12,8 @@
 ✅ Максимальный контекст для AI (500 символов на вопрос, до 100 вопросов)
 ✅ Фильтрация OCR-артефактов (лишние символы)
 ✅ Классификация документов и извлечение только нужных фрагментов
+✅ Столбец D с именем файла-источника
+✅ Поддержка DOC/DOCX/PDF (не только изображения)
 """
 
 import tkinter as tk
@@ -130,7 +132,7 @@ class TextPostProcessor:
     @staticmethod
     def classify_document_type(text):
         """
-        Классифицирует тип документа на основе содержимого
+        Улучшенная классификация типа документа на основе содержимого
 
         Возвращает один из типов:
         - 'regulation' - приказ, положение, инструкция, процедура
@@ -140,17 +142,79 @@ class TextPostProcessor:
         """
         text_upper = text.upper()
 
-        # Документы об обучении
-        if any(keyword in text_upper for keyword in ['УДОСТОВЕРЕНИЕ', 'ПОВЫШЕНИИ КВАЛИФИКАЦИИ', 'ОБУЧЕНИЕ', 'ПРОГРАММЕ']):
-            return 'certificate'
+        # Подсчет веса для каждого типа документа
+        scores = {
+            'certificate': 0,
+            'schedule': 0,
+            'regulation': 0
+        }
 
-        # Графики
-        if any(keyword in text_upper for keyword in ['ГРАФИК', 'РАСПИСАНИЕ', 'ПЛАН-ГРАФИК']):
-            return 'schedule'
+        # Документы об обучении - более точные критерии
+        certificate_keywords = {
+            'УДОСТОВЕРЕНИЕ': 3,
+            'ПОВЫШЕНИИ КВАЛИФИКАЦИИ': 3,
+            'ПОВЫШЕНИЕ КВАЛИФИКАЦИИ': 3,
+            'ОБУЧЕНИЕ': 1,
+            'ПРОГРАММЕ': 1,
+            'ПРОШЕЛ ОБУЧЕНИЕ': 2,
+            'ПРОШЛА ОБУЧЕНИЕ': 2,
+            'ОБЪЕМЕ': 1,
+            'ЧАСОВ': 1,
+            'АКАДЕМИЯ': 2,
+            'УЧЕБНЫЙ ЦЕНТР': 2,
+            'КУРС': 1
+        }
 
-        # Нормативные документы
-        if any(keyword in text_upper for keyword in ['ПРИКАЗ', 'ПОЛОЖЕНИЕ', 'ИНСТРУКЦИЯ', 'ПРОЦЕДУРА', 'РЕГЛАМЕНТ']):
-            return 'regulation'
+        # Графики - улучшенные критерии
+        schedule_keywords = {
+            'ГРАФИК': 3,
+            'РАСПИСАНИЕ': 3,
+            'ПЛАН-ГРАФИК': 4,
+            'МЕРОПРИЯТИЕ': 1,
+            'ОТВЕТСТВЕННОЕ ЛИЦО': 2,
+            'СРОК ВЫПОЛНЕНИЯ': 2,
+            'МЕСЯЦ': 1,
+            'КВАРТАЛ': 1
+        }
+
+        # Нормативные документы - улучшенные критерии
+        regulation_keywords = {
+            'ПРИКАЗ': 3,
+            'ПРИКАЗЫВАЮ': 4,
+            'ПОЛОЖЕНИЕ': 2,
+            'ИНСТРУКЦИЯ': 2,
+            'ПРОЦЕДУРА': 2,
+            'РЕГЛАМЕНТ': 2,
+            'УТВЕРДИТЬ': 2,
+            'НАЗНАЧИТЬ': 2,
+            'ДОВЕСТИ ДО СВЕДЕНИЯ': 2,
+            'ГЕНЕРАЛЬНЫЙ ДИРЕКТОР': 2,
+            'РУКОВОДИТЕЛЬ': 1
+        }
+
+        # Подсчет баллов для каждого типа
+        for keyword, weight in certificate_keywords.items():
+            if keyword in text_upper:
+                scores['certificate'] += weight
+
+        for keyword, weight in schedule_keywords.items():
+            if keyword in text_upper:
+                scores['schedule'] += weight
+
+        for keyword, weight in regulation_keywords.items():
+            if keyword in text_upper:
+                scores['regulation'] += weight
+
+        # Определяем тип с наибольшим баллом
+        max_score = max(scores.values())
+
+        if max_score == 0:
+            return 'unknown'
+
+        # Возвращаем тип с максимальным баллом
+        for doc_type, score in scores.items():
+            if score == max_score:
+                return doc_type
 
         return 'unknown'
 
@@ -238,7 +302,7 @@ class AuditProcessorApp:
 
     def __init__(self, root):
         self.root = root
-        self.root.title("🔍 Audit Processor v2.2 - Автозаполнение таблиц аудита (УЛУЧШЕННАЯ ВЕРСИЯ)")
+        self.root.title("🔍 Audit Processor v2.3 - Автозаполнение таблиц аудита (УЛУЧШЕННАЯ ВЕРСИЯ)")
         self.root.geometry("900x700")
         self.root.configure(bg="#f5f5f5")
 
@@ -338,7 +402,7 @@ class AuditProcessorApp:
 
         title_label = tk.Label(
             header,
-            text="🔍 Audit Processor v2.2 (УЛУЧШЕННАЯ ВЕРСИЯ)",
+            text="🔍 Audit Processor v2.3 (УЛУЧШЕННАЯ ВЕРСИЯ)",
             font=("Arial", 20, "bold"),
             bg="#2c3e50",
             fg="white"
@@ -386,9 +450,9 @@ class AuditProcessorApp:
 
         ttk.Button(
             btn_frame,
-            text="🖼️ Выбрать изображения (OCR)",
+            text="📁 Выбрать файлы (изображения/PDF/DOCX)",
             command=self.select_images,
-            width=35
+            width=40
         ).pack(side=tk.LEFT, padx=5)
 
         self.files_listbox = tk.Listbox(
@@ -488,7 +552,7 @@ class AuditProcessorApp:
 
         # Приветствие
         self.log("=" * 70)
-        self.log("🔍 Audit Processor УЛУЧШЕННАЯ ВЕРСИЯ v2.2")
+        self.log("🔍 Audit Processor УЛУЧШЕННАЯ ВЕРСИЯ v2.3")
         self.log("=" * 70)
         self.log("УЛУЧШЕНИЯ:")
         self.log("  ✅ Полное распознавание текста (не обрывается)")
@@ -497,7 +561,9 @@ class AuditProcessorApp:
         self.log("  ✅ Улучшенные промпты для AI")
         self.log("  ✅ Полный контекст для AI (500 символов на вопрос, 100 вопросов)")
         self.log("  ✅ Фильтрация OCR-артефактов (лишние символы)")
-        self.log("  ✅ Классификация документов и извлечение только нужных фрагментов")
+        self.log("  ✅ Умная классификация документов (взвешенная система)")
+        self.log("  ✅ Столбец D с именем файла-источника")
+        self.log("  ✅ Поддержка DOC/DOCX/PDF (не только изображения)")
         self.log("")
 
         if self.ai_available:
@@ -550,11 +616,14 @@ class AuditProcessorApp:
             messagebox.showerror("Ошибка", f"Не удалось открыть:\n{e}")
 
     def select_images(self):
-        """Выбор изображений"""
+        """Выбор файлов (изображения или документы)"""
         files = filedialog.askopenfilenames(
-            title="Выберите изображения",
+            title="Выберите файлы (изображения или документы)",
             filetypes=[
+                ("Все поддерживаемые", "*.jpg *.jpeg *.png *.bmp *.pdf *.docx *.doc"),
                 ("Изображения", "*.jpg *.jpeg *.png *.bmp"),
+                ("PDF документы", "*.pdf"),
+                ("Word документы", "*.docx *.doc"),
                 ("Все файлы", "*.*")
             ]
         )
@@ -563,7 +632,15 @@ class AuditProcessorApp:
             for file in files:
                 if file not in self.selected_files:
                     self.selected_files.append(file)
-                    self.files_listbox.insert(tk.END, f"🖼️ {os.path.basename(file)}")
+                    # Определяем иконку по типу файла
+                    ext = os.path.splitext(file)[1].lower()
+                    if ext in ['.pdf']:
+                        icon = "📄"
+                    elif ext in ['.doc', '.docx']:
+                        icon = "📝"
+                    else:
+                        icon = "🖼️"
+                    self.files_listbox.insert(tk.END, f"{icon} {os.path.basename(file)}")
 
             self.log(f"✅ Добавлено: {len(files)} файлов")
 
@@ -731,7 +808,61 @@ class AuditProcessorApp:
 
         return "OCR недоступен"
 
-    def match_questions(self, text, table_rows, metadata):
+    def extract_text_from_document(self, file_path):
+        """Извлечение текста из DOC/DOCX/PDF документов"""
+        file_ext = os.path.splitext(file_path)[1].lower()
+
+        try:
+            if file_ext == '.pdf':
+                # Извлечение из PDF
+                self.log("   📄 Извлечение текста из PDF...")
+                try:
+                    import PyPDF2
+                    text = ""
+                    with open(file_path, 'rb') as file:
+                        pdf_reader = PyPDF2.PdfReader(file)
+                        for page_num in range(len(pdf_reader.pages)):
+                            page = pdf_reader.pages[page_num]
+                            text += page.extract_text() + "\n"
+
+                    if text.strip():
+                        text = self.post_processor.fix_ocr_errors(text)
+                        self.log(f"   📝 Извлечено: {len(text)} символов из {len(pdf_reader.pages)} страниц")
+                        return text
+                    else:
+                        self.log("   ⚠️ PDF пустой или текст не извлекается")
+                        return "(Текст не извлечен из PDF)"
+                except ImportError:
+                    self.log("   ❌ PyPDF2 не установлен. Установите: pip install PyPDF2")
+                    return "Ошибка: PyPDF2 не установлен"
+
+            elif file_ext in ['.docx', '.doc']:
+                # Извлечение из DOCX
+                self.log("   📄 Извлечение текста из DOCX...")
+                try:
+                    from docx import Document
+                    doc = Document(file_path)
+                    text = "\n".join([para.text for para in doc.paragraphs if para.text.strip()])
+
+                    if text.strip():
+                        text = self.post_processor.fix_ocr_errors(text)
+                        self.log(f"   📝 Извлечено: {len(text)} символов из {len(doc.paragraphs)} параграфов")
+                        return text
+                    else:
+                        self.log("   ⚠️ Документ пустой")
+                        return "(Документ пустой)"
+                except ImportError:
+                    self.log("   ❌ python-docx не установлен. Установите: pip install python-docx")
+                    return "Ошибка: python-docx не установлен"
+
+            else:
+                return f"Неподдерживаемый формат: {file_ext}"
+
+        except Exception as e:
+            self.log(f"   ❌ Ошибка извлечения текста: {e}")
+            return f"Ошибка: {e}"
+
+    def match_questions(self, text, table_rows, metadata, source_file=""):
         """Улучшенное сопоставление текста с вопросами таблицы с классификацией документов"""
 
         # КЛАССИФИКАЦИЯ ДОКУМЕНТА
@@ -835,7 +966,8 @@ JSON:"""
                             "confidence": result.get('confidence', 'средняя'),
                             "reason": result.get('reason', 'AI определил соответствие'),
                             "fragment": relevant_fragment,  # Используем извлеченный фрагмент
-                            "doc_type": doc_type
+                            "doc_type": doc_type,
+                            "source_file": source_file  # Имя файла-источника
                         }
 
                 except json.JSONDecodeError:
@@ -932,11 +1064,20 @@ JSON:"""
             table_rows, header_positions = self.read_table_rows(ws, self.excel_header_row, headers)
             self.log(f"📋 Строк с данными: {len(table_rows)}")
 
-            # Добавляем колонку для свидетельств если нет
-            if "Свидетельства" not in header_positions and 3 <= len(headers) + 1:
+            # Добавляем колонки для свидетельств и источника если нет
+            if "Свидетельства" not in header_positions:
                 headers.append("Свидетельства")
-                header_positions["Свидетельства"] = 3
+                col_c = 3
+                ws.cell(row=self.excel_header_row, column=col_c, value="Свидетельства")
+                header_positions["Свидетельства"] = col_c
                 self.log("   Добавлена колонка 'Свидетельства' (C)")
+
+            if "Источник" not in header_positions:
+                headers.append("Источник")
+                col_d = 4
+                ws.cell(row=self.excel_header_row, column=col_d, value="Источник")
+                header_positions["Источник"] = col_d
+                self.log("   Добавлена колонка 'Источник' (D)")
 
             # Счетчики
             matched_count = 0
@@ -944,10 +1085,21 @@ JSON:"""
 
             # Обработка файлов
             for idx, file_path in enumerate(self.selected_files, start=1):
-                self.log(f"\n📄 [{idx}/{len(self.selected_files)}] {os.path.basename(file_path)}")
+                file_name = os.path.basename(file_path)
+                file_ext = os.path.splitext(file_path)[1].lower()
+                self.log(f"\n📄 [{idx}/{len(self.selected_files)}] {file_name}")
 
-                # OCR
-                text = self.extract_text_from_image(file_path)
+                # Определяем тип файла и извлекаем текст
+                text = None
+                if file_ext in ['.jpg', '.jpeg', '.png', '.bmp']:
+                    # Изображение - используем OCR
+                    text = self.extract_text_from_image(file_path)
+                elif file_ext in ['.pdf', '.doc', '.docx']:
+                    # Документ - извлекаем текст напрямую
+                    text = self.extract_text_from_document(file_path)
+                else:
+                    self.log(f"   ⚠️ Неподдерживаемый формат: {file_ext}")
+                    continue
 
                 if not text or len(text.strip()) < 10:
                     self.log("   ⚠️ Мало текста, пропускаем")
@@ -963,7 +1115,7 @@ JSON:"""
 
                 # Сопоставление
                 if self.ai_available and table_rows:
-                    match_result = self.match_questions(text, table_rows, metadata)
+                    match_result = self.match_questions(text, table_rows, metadata, source_file=file_name)
 
                     if match_result and match_result.get("matched_rows"):
                         rows = match_result["matched_rows"]
@@ -974,13 +1126,18 @@ JSON:"""
                         for row_num in rows:
                             if row_num in table_rows:
                                 # Вставляем в колонку Свидетельства ТОЛЬКО ФРАГМЕНТ
-                                col_idx = header_positions.get("Свидетельства", 3)
+                                col_c_idx = header_positions.get("Свидетельства", 3)
+                                col_d_idx = header_positions.get("Источник", 4)
 
-                                existing = ws.cell(row=row_num, column=col_idx).value
-                                # Вставляем ТОЛЬКО извлеченный фрагмент (не весь текст!)
-                                new_value = f"{existing}\n\n{fragment}" if existing else fragment
+                                # Колонка C - фрагмент
+                                existing_fragment = ws.cell(row=row_num, column=col_c_idx).value
+                                new_fragment = f"{existing_fragment}\n\n{fragment}" if existing_fragment else fragment
+                                ws.cell(row=row_num, column=col_c_idx, value=new_fragment)
 
-                                ws.cell(row=row_num, column=col_idx, value=new_value)
+                                # Колонка D - имя файла (источник)
+                                existing_source = ws.cell(row=row_num, column=col_d_idx).value
+                                new_source = f"{existing_source}\n{file_name}" if existing_source else file_name
+                                ws.cell(row=row_num, column=col_d_idx, value=new_source)
 
                                 self.log(f"   ✓ Добавлено в строку {row_num}")
                                 updated_rows.append(row_num)
@@ -1030,7 +1187,7 @@ def main():
     """Точка входа"""
 
     print("=" * 70)
-    print("🔍 Audit Processor УЛУЧШЕННАЯ ВЕРСИЯ v2.2")
+    print("🔍 Audit Processor УЛУЧШЕННАЯ ВЕРСИЯ v2.3")
     print("=" * 70)
     print()
     print("УЛУЧШЕНИЯ:")
@@ -1040,7 +1197,9 @@ def main():
     print("  ✅ Улучшенные промпты для AI")
     print("  ✅ Полный контекст для AI (500 символов на вопрос, до 100 вопросов)")
     print("  ✅ Фильтрация OCR-артефактов (лишние символы)")
-    print("  ✅ Классификация документов и извлечение только нужных фрагментов")
+    print("  ✅ Умная классификация документов (взвешенная система)")
+    print("  ✅ Столбец D с именем файла-источника")
+    print("  ✅ Поддержка DOC/DOCX/PDF (не только изображения)")
     print()
     print("=" * 70)
     print()

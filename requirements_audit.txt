@@ -1,9 +1,13 @@
-# Audit Processor - Requirements
+# Audit Processor v2.3 - Requirements
 
 # Core dependencies
 requests>=2.31.0
 openpyxl>=3.1.2
 pillow>=10.0.0
+
+# Документы (v2.3 - обязательно)
+python-docx>=1.1.0  # Для .docx/.doc файлов
+PyPDF2>=3.0.0       # Для PDF файлов
 
 # AI providers
 google-generativeai>=0.3.0  # Для Gemini (рекомендуется)
@@ -11,7 +15,5 @@ google-generativeai>=0.3.0  # Для Gemini (рекомендуется)
 # Optional: для работы с Ollama (локально)
 # ollama  # Если используете Ollama
 
-# Optional: для распознавания документов (если нужно)
-# python-docx>=1.1.0  # Для .docx файлов
-# PyMuPDF>=1.23.0     # Для PDF файлов
+# Optional: резервный OCR
 # easyocr>=1.7.0      # Резервный OCR (если Gemini недоступен)
